@@ -10,7 +10,7 @@ import urllib.parse
 import urllib.request
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any, cast
 
 import click
@@ -80,11 +80,14 @@ class Observation:
     coordinates: tuple[float, float] | None = None
     land_swapped: bool = False
 
-    def to_payload(self, unit: str = "celsius") -> dict[str, Any]:
+    def to_payload(
+        self, unit: str = "celsius", *, today: date | None = None
+    ) -> dict[str, Any]:
         """Return the reading, paragraph, and verification URLs as JSON data.
 
         Args:
             unit: Output unit, either ``celsius`` or ``fahrenheit``.
+            today: Optional UTC date used when rendering today's date in tests.
 
         Returns:
             A JSON-serializable dictionary with source values and copy.
@@ -92,7 +95,7 @@ class Observation:
         Example:
             ``payload = observation.to_payload("fahrenheit")``
         """
-        output = format_observation(self, unit)
+        output = format_observation(self, unit, today=today)
         return {
             **asdict(self),
             "source_urls": list(self.source_urls),
@@ -544,12 +547,18 @@ def choose_feature(
     }
 
 
-def format_observation(observation: Observation, unit: str) -> dict[str, Any]:
+def format_observation(
+    observation: Observation,
+    unit: str,
+    *,
+    today: date | None = None,
+) -> dict[str, Any]:
     """Format an observation and render the fixed newsroom paragraph.
 
     Args:
         observation: Validated monitor observation.
         unit: ``celsius`` or ``fahrenheit``.
+        today: Optional UTC date used when rendering today's date in tests.
 
     Returns:
         A dictionary with display values, paragraph, and verification URL.
@@ -567,7 +576,12 @@ def format_observation(observation: Observation, unit: str) -> dict[str, Any]:
     anomaly = observation.anomaly_c * factor
     direction = "above" if anomaly > 0 else "below" if anomaly < 0 else "at"
     parsed_date = date.fromisoformat(observation.date)
-    date_label = f"{parsed_date.strftime('%B')} {parsed_date.day}, {parsed_date.year}"
+    current_date = today or datetime.now(UTC).date()
+    date_label = (
+        parsed_date.strftime("%A")
+        if parsed_date == current_date
+        else f"{parsed_date.strftime('%B')} {parsed_date.day}, {parsed_date.year}"
+    )
     if observation.scope == "global":
         subject = "the global average high"
     elif observation.scope == "region":
@@ -575,14 +589,14 @@ def format_observation(observation: Observation, unit: str) -> dict[str, Any]:
     else:
         subject = f"the high in the nearest monitor grid cell to {observation.label}"
     paragraph = (
-        f"On {date_label}, {subject} is forecast to reach {daily:.1f}{suffix}, "
+        f"On {date_label}, {subject} is forecast to reach {daily:.0f}{suffix}, "
         f"{abs(anomaly):.1f}{suffix} {direction} the 1961–1990 average, "
-        "according to the Reuters Climate Monitor."
+        f"according to the [Reuters Climate Monitor]({SITE_ROOT})."
     )
     return {
         "unit": unit,
-        "daily_high": round(daily, 1),
-        "normal_high": round(normal, 1),
+        "daily_high": round(daily),
+        "normal_high": round(normal),
         "anomaly": round(anomaly, 1),
         "anomaly_direction": direction,
         "paragraph": paragraph,
@@ -617,6 +631,7 @@ def run_generation(
     label: str | None = None,
     lat: float | None = None,
     lng: float | None = None,
+    today: date | None = None,
 ) -> dict[str, Any]:
     """Fetch one requested scope and return the JSON payload.
 
@@ -630,6 +645,7 @@ def run_generation(
         label: Place label for a location request.
         lat: Location latitude.
         lng: Location longitude.
+        today: Optional UTC date used when rendering today's date in tests.
 
     Returns:
         A serializable paragraph payload.
@@ -655,7 +671,7 @@ def run_generation(
         observation = client.location_observation(label, lat, lng, day)
     else:
         raise ClimateMonitorError("Scope must be global, region, or location")
-    return observation.to_payload(unit)
+    return observation.to_payload(unit, today=today)
 
 
 @click.group()

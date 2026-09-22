@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gzip
+from datetime import date
 from typing import Any
 
 import mapbox_vector_tile
@@ -10,6 +11,7 @@ import pytest
 
 from reuters_climate_paragraph.cli import (
     CDN_ROOT,
+    SITE_ROOT,
     ClimateMonitorClient,
     ClimateMonitorError,
     Observation,
@@ -56,14 +58,20 @@ def test_global_generation_uses_exact_date_and_published_delta() -> None:
         ]
     )
 
-    payload = run_generation(client, "global", "2026-09-22", "celsius")
+    payload = run_generation(
+        client,
+        "global",
+        "2026-09-22",
+        "celsius",
+        today=date(2026, 9, 22),
+    )
 
     assert payload["daily_high_c"] == 20.04
     assert payload["anomaly_c"] == 1.234
     assert payload["paragraph"] == (
-        "On September 22, 2026, the global average high is forecast to reach "
-        "20.0°C, 1.2°C above the 1961–1990 average, according to the Reuters "
-        "Climate Monitor."
+        "On Tuesday, the global average high is forecast to reach 20°C, "
+        "1.2°C above the 1961–1990 average, according to the [Reuters Climate "
+        f"Monitor]({SITE_ROOT})."
     )
     assert payload["source_urls"] == [url]
 
@@ -88,6 +96,38 @@ def test_region_generation_filters_the_requested_region() -> None:
 
     assert payload["anomaly"] == 6.3
     assert "6.3°F above" in payload["paragraph"]
+
+
+def test_formatting_uses_weekday_today_and_whole_degree_absolute_values() -> None:
+    """Today's copy uses a weekday and rounds absolute values to degrees."""
+    observation = Observation(
+        scope="global",
+        label="the globe",
+        date="2026-09-22",
+        daily_high_c=20,
+        normal_high_c=18,
+        anomaly_c=2,
+        source_urls=(),
+        site_url=SITE_ROOT,
+    )
+
+    today_output = format_observation(
+        observation,
+        "fahrenheit",
+        today=date(2026, 9, 22),
+    )
+    historical_output = format_observation(
+        observation,
+        "fahrenheit",
+        today=date(2026, 9, 23),
+    )
+
+    assert today_output["daily_high"] == 68
+    assert today_output["normal_high"] == 64
+    assert today_output["anomaly"] == 3.6
+    assert "On Tuesday," in today_output["paragraph"]
+    assert "reach 68°F, 3.6°F above" in today_output["paragraph"]
+    assert "On September 22, 2026," in historical_output["paragraph"]
 
 
 def test_missing_date_is_an_error_instead_of_a_silent_fallback() -> None:

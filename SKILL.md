@@ -119,6 +119,8 @@ paragraph into a stronger claim. In particular:
 - A point result represents the nearest 0.25-degree grid cell, not an entire
   city or administrative area. Keep that qualification when describing a
   location.
+- Preserve the paragraph's Markdown link on the Reuters Climate Monitor
+  homepage.
 - Keep the verification links with the draft. The Reuters page link lets an
   editor inspect the map; the CDN link lets an editor inspect the source feed
   or PMTiles object directly.

@@ -10,6 +10,7 @@ import pytest
 from reuters_climate_paragraph.cli import (
     CDN_ROOT,
     MAP_ROOT,
+    SITE_ROOT,
     ClimateMonitorClient,
     format_observation,
 )
@@ -53,6 +54,9 @@ def test_today_global_region_and_location_are_published() -> None:
         assert observation.date == day
         assert_finite_observation(observation)
         formatted = format_observation(observation, "celsius")
+        assert isinstance(formatted["daily_high"], int)
+        assert f"({SITE_ROOT})" in formatted["paragraph"]
+        assert f"{abs(observation.anomaly_c):.1f}°C" in formatted["paragraph"]
         assert formatted["paragraph"]
 
     assert global_observation.source_urls == (

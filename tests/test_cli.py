@@ -17,6 +17,7 @@ from reuters_climate_paragraph.cli import (
     Observation,
     choose_feature,
     format_observation,
+    geocode_place,
     run_generation,
     snap_to_grid,
     validate_coordinates,
@@ -230,6 +231,7 @@ def test_location_land_fallback_and_verification_url() -> None:
 
     client = ClimateMonitorClient(
         range_source_factory=lambda _: lambda _offset, _length: b"",
+        geocoder=lambda _label: (0, 0),
     )
     original_reader = __import__("reuters_climate_paragraph.cli", fromlist=["Reader"])
     monkeypatch = pytest.MonkeyPatch()
@@ -241,8 +243,6 @@ def test_location_land_fallback_and_verification_url() -> None:
             "2026-09-22",
             "celsius",
             label="Test Coast",
-            lat=0,
-            lng=0,
         )
     finally:
         monkeypatch.undo()
@@ -252,6 +252,27 @@ def test_location_land_fallback_and_verification_url() -> None:
     assert "the high in Test Coast" in payload["paragraph"]
     assert "lat=0" in payload["site_url"]
     assert payload["source_urls"][0].endswith("/2026-09-22/t2m_max_delta_data.pmtiles")
+
+
+def test_nominatim_results_are_cached(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+) -> None:
+    """A place lookup uses the local cache on repeated requests."""
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    calls: list[str] = []
+
+    def fake_fetch(url: str) -> object:
+        calls.append(url)
+        return [{"lat": "48.8566", "lon": "2.3522"}]
+
+    monkeypatch.setattr(
+        "reuters_climate_paragraph.cli.fetch_nominatim_json",
+        fake_fetch,
+    )
+
+    assert geocode_place("Paris") == (48.8566, 2.3522)
+    assert geocode_place(" paris ") == (48.8566, 2.3522)
+    assert len(calls) == 1
 
 
 def test_choose_feature_ignores_non_point_features() -> None:

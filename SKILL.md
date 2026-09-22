@@ -26,8 +26,9 @@ answer, a cached value, a screenshot, or a legacy feed.
    - `global` for the whole globe.
    - `region` for a named aggregate such as Europe, Western Europe, or
      Southwest.
-   - `location` for a point. Obtain latitude and longitude from a trusted
-     geocoder or ask the user for coordinates. Never guess coordinates.
+   - `location` for a named place. The sidecar uses the cached OpenStreetMap
+     Nominatim service by default. Explicit user-provided coordinates may be
+     passed instead; never guess coordinates.
 2. Resolve the date as the current UTC date. Pass it explicitly to the
    sidecar; this makes the result reproducible.
 3. Use the fixed Celsius-first, Fahrenheit-in-parentheses presentation. Do not
@@ -58,17 +59,22 @@ answer, a cached value, a screenshot, or a legacy feed.
    uv run climate-monitor generate \
      --scope location \
      --label "Paris" \
-     --lat 48.8566 \
-     --lng 2.3522 \
      --date YYYY-MM-DD \
      --unit celsius
    ```
 
-5. Return the `paragraph` value exactly as the publication-ready copy. Then
+   Pass `--lat` and `--lng` together only when the user supplies coordinates
+   or a trusted newsroom geocoder has already resolved the place.
+5. Nominatim lookups are for occasional, user-triggered searches only. The
+   sidecar identifies itself with a descriptive `User-Agent`, caches results,
+   does not offer autocomplete or bulk geocoding, and sends only the place
+   query. Do not send personal or confidential text. Follow the
+   [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/).
+6. Return the `paragraph` value exactly as the publication-ready copy. Then
    include the `site_url` and every URL in `source_urls` under a short
    **Verification** label. Keep the data date and resolved grid coordinates
    visible for a location result.
-6. If the command fails because the requested date is not published, report
+7. If the command fails because the requested date is not published, report
    that plainly and do not substitute a different date. If a location is
    resolved to a nearby land grid cell, retain the sidecar's warning and
    resolved coordinates in the verification note.

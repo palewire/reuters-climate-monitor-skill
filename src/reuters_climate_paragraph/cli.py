@@ -5,12 +5,14 @@ from __future__ import annotations
 import gzip
 import json
 import math
+import os
 import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass
 from datetime import UTC, date, datetime
+from pathlib import Path
 from typing import Any, cast
 
 import click
@@ -23,6 +25,11 @@ MAP_ROOT = (
     "newsapps_reuters-climate-monitor/daily-anomalies-map/hres"
 )
 SITE_ROOT = "https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/"
+NOMINATIM_ROOT = "https://nominatim.openstreetmap.org/search"
+NOMINATIM_USER_AGENT = (
+    "ReutersClimateParagraph/0.1 "
+    "(https://github.com/palewire/reuters-climate-monitor-skill)"
+)
 GRID_SIZE = 0.25
 ZOOM = 8
 MAX_LAND_SWAP_DISTANCE = GRID_SIZE * 2
@@ -43,6 +50,7 @@ REGION_SETS = {
 }
 
 JsonFetcher = Callable[[str], object]
+Geocoder = Callable[[str], tuple[float, float]]
 
 
 class ClimateMonitorError(RuntimeError):
@@ -121,9 +129,11 @@ class ClimateMonitorClient:
         json_fetcher: JsonFetcher | None = None,
         range_source_factory: Callable[[str], Callable[[int, int], bytes]]
         | None = None,
+        geocoder: Geocoder | None = None,
     ) -> None:
         self._json_fetcher = json_fetcher or fetch_json
         self._range_source_factory = range_source_factory or http_range_source
+        self._geocoder = geocoder or geocode_place
 
     def global_observation(self, day: str) -> Observation:
         """Fetch the globe's reading for an exact UTC date.
@@ -165,14 +175,18 @@ class ClimateMonitorClient:
         return observation_from_row("region", region, day, row, (url,))
 
     def location_observation(
-        self, label: str, lat: float, lng: float, day: str
+        self,
+        label: str,
+        lat: float | None,
+        lng: float | None,
+        day: str,
     ) -> Observation:
         """Fetch the nearest daily anomaly grid cell for a point.
 
         Args:
             label: Human-readable name supplied by the newsroom user.
-            lat: Latitude in decimal degrees.
-            lng: Longitude in decimal degrees.
+            lat: Latitude in decimal degrees, or ``None`` to geocode ``label``.
+            lng: Longitude in decimal degrees, or ``None`` to geocode ``label``.
             day: UTC date in ``YYYY-MM-DD`` form.
 
         Returns:
@@ -182,6 +196,10 @@ class ClimateMonitorClient:
             ClimateMonitorError: If the coordinates, tile, or feature is
                 unusable.
         """
+        if (lat is None) != (lng is None):
+            raise ClimateMonitorError("Location requests need both --lat and --lng")
+        if lat is None or lng is None:
+            lat, lng = self._geocoder(label)
         validate_coordinates(lat, lng)
         url = f"{MAP_ROOT}/{day}/t2m_max_delta_data.pmtiles"
         reader = Reader(self._range_source_factory(url))
@@ -252,6 +270,147 @@ def fetch_json(url: str) -> object:
         raise ClimateMonitorError(
             f"Could not read Reuters feed {url}: {error}"
         ) from error
+
+
+def geocode_place(label: str) -> tuple[float, float]:
+    """Resolve a place name with the cached OpenStreetMap Nominatim service.
+
+    Args:
+        label: Place name or unambiguous place query.
+
+    Returns:
+        A latitude and longitude in decimal degrees.
+
+    Raises:
+        ClimateMonitorError: If the lookup, response, or cache is unusable.
+    """
+    query = label.strip()
+    if not query:
+        raise ClimateMonitorError("Location label must not be empty")
+    cache_path = geocoder_cache_path()
+    cache = read_geocoder_cache(cache_path)
+    cache_key = query.casefold()
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return parse_geocoder_coordinates(cached, query)
+
+    url = f"{NOMINATIM_ROOT}?{urllib.parse.urlencode({'q': query, 'format': 'jsonv2', 'limit': 1})}"
+    raw = fetch_nominatim_json(url)
+    if not isinstance(raw, list) or not raw or not isinstance(raw[0], dict):
+        raise ClimateMonitorError(f"Nominatim found no result for {query!r}")
+    result = raw[0]
+    coordinates = parse_geocoder_coordinates(result, query)
+    cache[cache_key] = {"lat": coordinates[0], "lng": coordinates[1]}
+    write_geocoder_cache(cache_path, cache)
+    return coordinates
+
+
+def fetch_nominatim_json(url: str) -> object:
+    """Fetch a Nominatim response with the required identifying user agent.
+
+    Args:
+        url: Absolute Nominatim search URL.
+
+    Returns:
+        The decoded JSON response.
+
+    Raises:
+        ClimateMonitorError: If the request or response is unusable.
+    """
+    request = urllib.request.Request(  # noqa: S310 - Nominatim HTTPS URL.
+        url,
+        headers={
+            "Accept": "application/json",
+            "User-Agent": NOMINATIM_USER_AGENT,
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
+            return json.load(response)
+    except (OSError, urllib.error.URLError, json.JSONDecodeError) as error:
+        raise ClimateMonitorError(
+            f"Could not read Nominatim response for {url}: {error}"
+        ) from error
+
+
+def geocoder_cache_path() -> Path:
+    """Return the local cache path for Nominatim results.
+
+    Returns:
+        A JSON path under ``$XDG_CACHE_HOME`` or the user's cache directory.
+    """
+    cache_root = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+    return cache_root / "reuters-climate-paragraph" / "nominatim.json"
+
+
+def read_geocoder_cache(path: Path) -> dict[str, dict[str, float]]:
+    """Read cached geocoder coordinates.
+
+    Args:
+        path: JSON cache path.
+
+    Returns:
+        Cached place coordinates, or an empty mapping when no cache exists.
+
+    Raises:
+        ClimateMonitorError: If an existing cache cannot be decoded.
+    """
+    try:
+        raw = json.loads(path.read_text())
+    except FileNotFoundError:
+        return {}
+    except (OSError, json.JSONDecodeError) as error:
+        raise ClimateMonitorError(
+            f"Could not read geocoder cache {path}: {error}"
+        ) from error
+    if not isinstance(raw, dict):
+        raise ClimateMonitorError(f"Geocoder cache is not an object: {path}")
+    return cast("dict[str, dict[str, float]]", raw)
+
+
+def write_geocoder_cache(path: Path, cache: dict[str, dict[str, float]]) -> None:
+    """Write cached geocoder coordinates.
+
+    Args:
+        path: JSON cache path.
+        cache: Place coordinates to save.
+
+    Raises:
+        ClimateMonitorError: If the cache cannot be written.
+    """
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(cache, indent=2, sort_keys=True) + "\n")
+    except OSError as error:
+        raise ClimateMonitorError(
+            f"Could not write geocoder cache {path}: {error}"
+        ) from error
+
+
+def parse_geocoder_coordinates(
+    result: dict[str, Any], query: str
+) -> tuple[float, float]:
+    """Parse and validate coordinates from a Nominatim result or cache entry.
+
+    Args:
+        result: Nominatim result mapping.
+        query: Original place query used in the error message.
+
+    Returns:
+        A latitude and longitude in decimal degrees.
+
+    Raises:
+        ClimateMonitorError: If the result does not contain valid coordinates.
+    """
+    try:
+        lat = float(result["lat"])
+        lng = float(result["lon"] if "lon" in result else result["lng"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise ClimateMonitorError(
+            f"Nominatim returned no valid coordinates for {query!r}"
+        ) from error
+    validate_coordinates(lat, lng)
+    return lat, lng
 
 
 def http_range_source(url: str) -> Callable[[int, int], bytes]:
@@ -725,10 +884,10 @@ def run_generation(
             raise ClimateMonitorError("Region requests need --region-set and --region")
         observation = client.region_observation(region_set, region, day)
     elif scope == "location":
-        if label is None or lat is None or lng is None:
-            raise ClimateMonitorError(
-                "Location requests need --label, --lat, and --lng"
-            )
+        if label is None:
+            raise ClimateMonitorError("Location requests need --label")
+        if (lat is None) != (lng is None):
+            raise ClimateMonitorError("Location requests need both --lat and --lng")
         observation = client.location_observation(label, lat, lng, day)
     else:
         raise ClimateMonitorError("Scope must be global, region, or location")
@@ -756,8 +915,8 @@ def cli() -> None:
 @click.option("--region-set", default=None)
 @click.option("--region", default=None)
 @click.option("--label", default=None)
-@click.option("--lat", type=float, default=None)
-@click.option("--lng", type=float, default=None)
+@click.option("--lat", type=float, default=None, help="Optional latitude override.")
+@click.option("--lng", type=float, default=None, help="Optional longitude override.")
 def generate(
     scope: str,
     day: str,

@@ -47,11 +47,16 @@ For a location:
 uv run climate-monitor generate \
   --scope location \
   --label "Paris" \
-  --lat 48.8566 \
-  --lng 2.3522 \
   --date YYYY-MM-DD \
   --unit celsius
 ```
+
+Location names are geocoded with the cached OpenStreetMap Nominatim service by
+default. Pass `--lat` and `--lng` together to use coordinates supplied by the
+user instead. Nominatim is intended here for occasional, user-triggered
+lookups: requests identify this application, repeated lookups are cached, and
+the skill does not provide autocomplete or bulk geocoding. See the
+[Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/).
 
 See [SKILL.md](SKILL.md) for the Claude operating instructions and the
 complete output policy.

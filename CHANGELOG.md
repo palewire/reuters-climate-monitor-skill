@@ -12,6 +12,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Format paragraph temperatures with Celsius first and the Fahrenheit
   equivalent in parentheses.
+- Use the cached OpenStreetMap Nominatim service to geocode named locations by
+  default.
 
 ### Fixed
 

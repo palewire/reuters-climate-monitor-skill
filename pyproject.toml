@@ -72,6 +72,9 @@ test-extras = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+reuters_climate_paragraph = ["py.typed"]
+
 [tool.setuptools_scm]
 fallback_version = "0.0.0"
 

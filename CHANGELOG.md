@@ -31,6 +31,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Clear inherited `UV_ENV_FILE` settings before Skill `uv` commands so a
+  missing project-local `.env` file does not block the packaged sidecar.
+
 ### Removed
 
 ### Security

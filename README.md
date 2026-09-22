@@ -49,16 +49,23 @@ and returns only the ready-to-use paragraph.
 The skill requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). From the
 skill directory:
 
+The sidecar does not need a `.env` file or secrets. If your shell or Desktop
+installation sets `UV_ENV_FILE` globally, clear it before each `uv` command:
+
+```bash
+env -u UV_ENV_FILE uv run ...
+```
+
 To list every region set and label currently published by the Monitor:
 
 ```bash
-uv run reuters-climate-paragraph regions
+env -u UV_ENV_FILE uv run reuters-climate-paragraph regions
 ```
 
 To list labels from one region set:
 
 ```bash
-uv run reuters-climate-paragraph regions \
+env -u UV_ENV_FILE uv run reuters-climate-paragraph regions \
   --region-set continent
 ```
 
@@ -66,7 +73,7 @@ These commands return JSON and read the current public feeds, so they are the
 best source when a user asks which regions are supported.
 
 ```bash
-uv run reuters-climate-paragraph generate \
+env -u UV_ENV_FILE uv run reuters-climate-paragraph generate \
   --scope global \
   --date YYYY-MM-DD
 ```
@@ -74,7 +81,7 @@ uv run reuters-climate-paragraph generate \
 For a named region:
 
 ```bash
-uv run reuters-climate-paragraph generate \
+env -u UV_ENV_FILE uv run reuters-climate-paragraph generate \
   --scope region \
   --region-set continent \
   --region Europe \
@@ -84,7 +91,7 @@ uv run reuters-climate-paragraph generate \
 For a location:
 
 ```bash
-uv run reuters-climate-paragraph generate \
+env -u UV_ENV_FILE uv run reuters-climate-paragraph generate \
   --scope location \
   --label "Paris" \
   --date YYYY-MM-DD
@@ -98,7 +105,7 @@ Add `--verbose` before the command to print request status, exception details,
 and safe CDN response headers to stderr without changing the JSON output:
 
 ```bash
-uv run reuters-climate-paragraph --verbose generate \
+env -u UV_ENV_FILE uv run reuters-climate-paragraph --verbose generate \
   --scope global \
   --date YYYY-MM-DD
 ```
@@ -113,7 +120,7 @@ The CLI prints JSON containing the published values, the ready-to-use
 paragraph, and links for verification. The same global example above produces:
 
 ```console
-$ uv run reuters-climate-paragraph generate \
+$ env -u UV_ENV_FILE uv run reuters-climate-paragraph generate \
     --scope global \
     --date 2026-09-22
 {
@@ -139,7 +146,7 @@ $ uv run reuters-climate-paragraph generate \
 The regional example produces:
 
 ```console
-$ uv run reuters-climate-paragraph generate \
+$ env -u UV_ENV_FILE uv run reuters-climate-paragraph generate \
     --scope region \
     --region-set continent \
     --region Europe \
@@ -168,7 +175,7 @@ Location requests can omit coordinates. In that case, the sidecar geocodes the
 place name and includes the geocoder link in its verification details:
 
 ```console
-$ uv run reuters-climate-paragraph generate \
+$ env -u UV_ENV_FILE uv run reuters-climate-paragraph generate \
     --scope location \
     --label "Paris" \
     --date 2026-08-01
@@ -199,7 +206,7 @@ When a user has already identified the place with coordinates, pass them
 directly instead:
 
 ```console
-$ uv run reuters-climate-paragraph generate \
+$ env -u UV_ENV_FILE uv run reuters-climate-paragraph generate \
     --scope location \
     --label "Paris" \
     --lat 48.8566 \

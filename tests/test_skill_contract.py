@@ -67,6 +67,13 @@ def test_documented_commands_use_the_current_entrypoint() -> None:
     assert "rcp" in README_PATH.read_text()
 
 
+def test_skill_commands_clear_project_env_file_override() -> None:
+    """Skill commands do not inherit a missing project-local env file."""
+    for line in SKILL_PATH.read_text().splitlines():
+        if "uv run" in line:
+            assert line.strip().startswith("env -u UV_ENV_FILE uv run")
+
+
 def test_package_exposes_primary_command_and_alias() -> None:
     """Packaging metadata exposes both supported console commands."""
     project = tomllib.loads(PYPROJECT_PATH.read_text())["project"]

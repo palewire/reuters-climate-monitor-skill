@@ -13,6 +13,14 @@ parentheses, but it must not perform analysis. Do not calculate the anomaly from
 temperatures: use the published `t2m_max_delta` field. Do not use a previous
 answer, a cached value, a screenshot, or a legacy feed.
 
+The packaged sidecar does not need a `.env` file or secrets. Some Desktop
+installations set `UV_ENV_FILE` globally to a project-local `.env`, so always
+clear that setting before invoking `uv`:
+
+```bash
+env -u UV_ENV_FILE uv run ...
+```
+
 ## Workflow
 
 1. Identify the requested scope:
@@ -25,7 +33,7 @@ answer, a cached value, a screenshot, or a legacy feed.
    - To show the current full list of supported region sets and labels, run:
 
      ```bash
-     uv run reuters-climate-paragraph regions
+   env -u UV_ENV_FILE uv run reuters-climate-paragraph regions
      ```
 
      Add `--region-set continent` (or another published set) to inspect one
@@ -44,7 +52,7 @@ answer, a cached value, a screenshot, or a legacy feed.
 4. Run the sidecar from this skill directory:
 
    ```bash
-   uv run reuters-climate-paragraph generate \
+   env -u UV_ENV_FILE uv run reuters-climate-paragraph generate \
      --scope global \
      --date YYYY-MM-DD
    ```
@@ -52,7 +60,7 @@ answer, a cached value, a screenshot, or a legacy feed.
    For a continent:
 
    ```bash
-   uv run reuters-climate-paragraph generate \
+   env -u UV_ENV_FILE uv run reuters-climate-paragraph generate \
      --scope region \
      --region-set continent \
      --region Europe \
@@ -62,7 +70,7 @@ answer, a cached value, a screenshot, or a legacy feed.
    For a location:
 
    ```bash
-   uv run reuters-climate-paragraph generate \
+   env -u UV_ENV_FILE uv run reuters-climate-paragraph generate \
      --scope location \
      --label "Paris" \
      --date YYYY-MM-DD
@@ -171,10 +179,10 @@ space in the sentence.
 From this skill directory:
 
 ```bash
-uv run pytest -m "not integration"
-uv run pytest -m integration
-uv run ruff check .
-uv run ty check
+env -u UV_ENV_FILE uv run pytest -m "not integration"
+env -u UV_ENV_FILE uv run pytest -m integration
+env -u UV_ENV_FILE uv run ruff check .
+env -u UV_ENV_FILE uv run ty check
 ```
 
 The default test command is offline and uses synthetic feed and vector-tile

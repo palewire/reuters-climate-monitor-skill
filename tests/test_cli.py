@@ -159,6 +159,7 @@ def test_location_land_fallback_and_verification_url() -> None:
 
     assert payload["land_swapped"] is True
     assert payload["coordinates"] is not None
+    assert "nearest monitor grid cell to Test Coast" in payload["paragraph"]
     assert "lat=0" in payload["site_url"]
     assert payload["source_urls"][0].endswith("/2026-09-22/t2m_max_delta_data.pmtiles")
 

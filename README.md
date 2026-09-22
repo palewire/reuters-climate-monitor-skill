@@ -1,7 +1,7 @@
 # Reuters Climate Monitor paragraph skill
 
-This repository is a portable Claude Skill. Copy the repository folder into
-the Claude Desktop skills directory or package it according to the newsroom's
+This folder is a portable Claude Skill. Copy the complete folder into the
+Claude Desktop skills directory or package it according to the newsroom's
 Claude deployment process.
 
 The sidecar is deliberately source-first: it reads the Reuters Climate Monitor
@@ -13,6 +13,12 @@ CDN, selects the requested UTC date exactly, and emits JSON containing:
 - direct feed or PMTiles URLs for verification;
 - the resolved grid coordinates for point lookups.
 
+The output is intentionally limited to one published reading. The paragraph
+is a fixed presentation of that reading, and Fahrenheit is a display
+conversion from the published Celsius values. The skill does not produce
+rankings, multi-location averages, trends, records, causes, climate
+attribution, or recomputed anomalies.
+
 Install and test it with [uv](https://docs.astral.sh/uv/):
 
 ```bash
@@ -21,10 +27,3 @@ uv run pytest
 uv run ruff check .
 uv run ty check
 ```
-
-## Rights and attribution
-
-The code in this repository is available under the MIT license. Reuters
-Climate Monitor data, Reuters trademarks and branding, editorial copy, and
-visual design are not included in that license. Use the live data feeds only
-as permitted by their owners and keep Reuters attribution when required.

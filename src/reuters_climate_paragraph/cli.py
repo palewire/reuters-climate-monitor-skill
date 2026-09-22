@@ -573,7 +573,7 @@ def format_observation(observation: Observation, unit: str) -> dict[str, Any]:
     elif observation.scope == "region":
         subject = f"the average high in {observation.label}"
     else:
-        subject = f"the high in {observation.label}"
+        subject = f"the high in the nearest monitor grid cell to {observation.label}"
     paragraph = (
         f"On {date_label}, {subject} is forecast to reach {daily:.1f}{suffix}, "
         f"{abs(anomaly):.1f}{suffix} {direction} the 1961–1990 average, "

@@ -42,6 +42,7 @@ dev = [
     "check-wheel-contents",
     "deptry",
     "pre-commit",
+    "ruff>=0.16.8",
     "setuptools-scm",
     "twine",
     "ty",

@@ -1,11 +1,8 @@
 ---
 name: reuters-climate-paragraph
 description: >
-  Produce one fixed, publication-ready paragraph using one published Reuters
-  Climate Monitor reading for the globe, a named region, or a
-  latitude/longitude. Use when a newsroom user asks for today's climate-monitor
-  temperature paragraph, a regional comparison with normal, or a
-  location-specific reading.
+  Produce a publication-ready paragraph from the Reuters Climate Monitor. Use when a newsroom user asks
+  for climate-monitor data.
 compatibility: >
   Requires Python 3.11+, uv, and network access to the Reuters Climate Monitor
   CDN. The sidecar uses the Reuters feeds directly and does not scrape page

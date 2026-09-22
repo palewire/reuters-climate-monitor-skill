@@ -29,7 +29,7 @@ NOMINATIM_ROOT = "https://nominatim.openstreetmap.org/search"
 OPENSTREETMAP_ROOT = "https://www.openstreetmap.org/"
 NOMINATIM_USER_AGENT = (
     "ReutersClimateParagraph/0.1 "
-    "(https://github.com/palewire/reuters-climate-monitor-skill)"
+    "(https://github.com/palewire/reuters-climate-paragraph)"
 )
 CAUTION = (
     "Verify the date, place, and figures against the linked Reuters Climate "

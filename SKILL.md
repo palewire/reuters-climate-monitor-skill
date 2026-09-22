@@ -36,7 +36,7 @@ answer, a cached value, a screenshot, or a legacy feed.
 4. Run the sidecar from this skill directory:
 
    ```bash
-   uv run reuters-climate-monitor generate \
+   uv run reuters-climate-paragraph generate \
      --scope global \
      --date YYYY-MM-DD \
      --unit celsius
@@ -45,7 +45,7 @@ answer, a cached value, a screenshot, or a legacy feed.
    For a continent:
 
    ```bash
-   uv run reuters-climate-monitor generate \
+   uv run reuters-climate-paragraph generate \
      --scope region \
      --region-set continent \
      --region Europe \
@@ -56,7 +56,7 @@ answer, a cached value, a screenshot, or a legacy feed.
    For a location:
 
    ```bash
-   uv run reuters-climate-monitor generate \
+   uv run reuters-climate-paragraph generate \
      --scope location \
      --label "Paris" \
      --date YYYY-MM-DD \

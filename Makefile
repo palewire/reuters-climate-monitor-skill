@@ -79,8 +79,8 @@ live-test: ## Run live Reuters data checks
 
 skill-test: ## Check Skill metadata, instructions, fixtures, and entrypoints
 	$(RUN) pytest tests/test_skill_contract.py $(TEST_ARGS)
-	$(RUN) reuters-climate-monitor --help >/dev/null
-	$(RUN) rcm --help >/dev/null
+	$(RUN) reuters-climate-paragraph --help >/dev/null
+	$(RUN) rcp --help >/dev/null
 
 skill-package: ## Build the portable Claude Skill zip archive
 	$(RUN) python scripts/package_skill.py dist/reuters-climate-paragraph-skill.zip

@@ -60,16 +60,16 @@ def test_documented_commands_use_the_current_entrypoint() -> None:
     for path in (README_PATH, SKILL_PATH):
         content = path.read_text()
         assert "uv run climate-monitor" not in content
-        assert "uv run reuters-climate-monitor generate" in content
-    assert "rcm" in README_PATH.read_text()
+        assert "uv run reuters-climate-paragraph generate" in content
+    assert "rcp" in README_PATH.read_text()
 
 
 def test_package_exposes_primary_command_and_alias() -> None:
     """Packaging metadata exposes both supported console commands."""
     project = tomllib.loads(PYPROJECT_PATH.read_text())["project"]
     assert project["scripts"] == {
-        "reuters-climate-monitor": "reuters_climate_paragraph.cli:cli",
-        "rcm": "reuters_climate_paragraph.cli:cli",
+        "reuters-climate-paragraph": "reuters_climate_paragraph.cli:cli",
+        "rcp": "reuters_climate_paragraph.cli:cli",
     }
 
 

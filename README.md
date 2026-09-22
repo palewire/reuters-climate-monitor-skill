@@ -1,4 +1,4 @@
-# Reuters Climate Monitor paragraph skill
+# Reuters Climate Paragraph Skill
 
 This repository is a portable Claude Skill for producing one fixed,
 publication-ready paragraph from a single published Reuters Climate Monitor
@@ -26,7 +26,7 @@ The skill requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). From the
 skill directory:
 
 ```bash
-uv run reuters-climate-monitor generate \
+uv run reuters-climate-paragraph generate \
   --scope global \
   --date YYYY-MM-DD \
   --unit celsius
@@ -35,7 +35,7 @@ uv run reuters-climate-monitor generate \
 For a named region:
 
 ```bash
-uv run reuters-climate-monitor generate \
+uv run reuters-climate-paragraph generate \
   --scope region \
   --region-set continent \
   --region Europe \
@@ -46,14 +46,14 @@ uv run reuters-climate-monitor generate \
 For a location:
 
 ```bash
-uv run reuters-climate-monitor generate \
+uv run reuters-climate-paragraph generate \
   --scope location \
   --label "Paris" \
   --date YYYY-MM-DD \
   --unit celsius
 ```
 
-The shorter `rcm` command is an alias for `reuters-climate-monitor`.
+The shorter `rcp` command is an alias for `reuters-climate-paragraph`.
 
 ## Package for Claude Desktop
 

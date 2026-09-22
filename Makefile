@@ -8,7 +8,7 @@ COVERAGE_FAIL_UNDER ?= 80
 TEST_ARGS ?=
 RUN = $(if $(UV_PYTHON),UV_PYTHON=$(UV_PYTHON)) $(UV) run
 
-.PHONY: all help bootstrap install install-all install-dev install-test install-test-extras check verify verify-fast live-test skill-test diff-check lint format-check format fix type-check dependency-check workflow-check manifest-check test test-serial test-parallel coverage build package-check package-verify hooks clean
+.PHONY: all help bootstrap install install-all install-dev install-test install-test-extras check verify verify-fast live-test skill-test skill-package diff-check lint format-check format fix type-check dependency-check workflow-check manifest-check test test-serial test-parallel coverage build package-check package-verify hooks clean
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_-]+:.*## / {printf "%-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -34,7 +34,7 @@ all: verify ## Run the complete verification suite
 
 check: diff-check lint format-check type-check dependency-check workflow-check ## Run fast, non-mutating code checks
 
-verify-fast: check test manifest-check build ## Run checks without live network requests
+verify-fast: check test manifest-check build skill-package ## Run checks without live network requests
 
 verify: verify-fast live-test ## Run all checks, including live Reuters data
 
@@ -81,6 +81,9 @@ skill-test: ## Check Skill metadata, instructions, fixtures, and entrypoints
 	$(RUN) pytest tests/test_skill_contract.py $(TEST_ARGS)
 	$(RUN) reuters-climate-monitor --help >/dev/null
 	$(RUN) rcm --help >/dev/null
+
+skill-package: ## Build the portable Claude Skill zip archive
+	$(RUN) python scripts/package_skill.py dist/reuters-climate-paragraph-skill.zip
 
 coverage: ## Enforce coverage for PACKAGE
 	@test -n "$(PACKAGE)" || { echo "Set PACKAGE to the library import name."; exit 2; }

@@ -36,6 +36,12 @@ Run the Skill-specific contract and entrypoint checks with:
 make skill-test
 ```
 
+Build the distributable Claude Skill archive with:
+
+```bash
+make skill-package
+```
+
 The human-review prompt set lives in `tests/fixtures/skill_eval_cases.json`.bash
 make bootstrap
 make check

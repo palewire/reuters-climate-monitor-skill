@@ -55,6 +55,22 @@ uv run reuters-climate-monitor generate \
 
 The shorter `rcm` command is an alias for `reuters-climate-monitor`.
 
+## Package for Claude Desktop
+
+Build the portable Skill archive with:
+
+```bash
+make skill-package
+```
+
+This creates `dist/reuters-climate-paragraph-skill.zip`. The archive contains
+the root `SKILL.md`, the locked Python project, and the `src/` sidecar needed
+for runtime lookups. Install or distribute the unzipped
+`reuters-climate-paragraph/` folder using the newsroom's Claude Desktop Skill
+deployment process. The Python wheel and source distribution created by
+`make build` are separate developer artifacts and are not substitutes for the
+Skill archive because they do not provide the root `SKILL.md`.
+
 Location names are geocoded with the cached OpenStreetMap Nominatim service by
 default. Pass `--lat` and `--lng` together to use coordinates supplied by the
 user instead. Nominatim is intended here for occasional, user-triggered

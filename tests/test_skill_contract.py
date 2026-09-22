@@ -12,6 +12,7 @@ SKILL_PATH = ROOT / "SKILL.md"
 README_PATH = ROOT / "README.md"
 PYPROJECT_PATH = ROOT / "pyproject.toml"
 EVAL_CASES_PATH = ROOT / "tests" / "fixtures" / "skill_eval_cases.json"
+PACKAGE_SCRIPT_PATH = ROOT / "scripts" / "package_skill.py"
 
 
 def read_skill_parts() -> tuple[str, str]:
@@ -70,6 +71,14 @@ def test_package_exposes_primary_command_and_alias() -> None:
         "reuters-climate-monitor": "reuters_climate_paragraph.cli:cli",
         "rcm": "reuters_climate_paragraph.cli:cli",
     }
+
+
+def test_skill_package_script_includes_runtime_files() -> None:
+    """The Skill archive includes instructions and the Python sidecar."""
+    package_script = PACKAGE_SCRIPT_PATH.read_text()
+
+    for required_path in ("SKILL.md", "pyproject.toml", "uv.lock", '"src"'):
+        assert required_path in package_script
 
 
 def test_skill_review_fixture_covers_required_request_types() -> None:

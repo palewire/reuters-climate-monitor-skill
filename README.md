@@ -1,4 +1,4 @@
-# Reuters Climate Monitor paragraph skill
+# Reuters Climate Paragraph Skill
 
 This repository is a portable Claude Skill for producing one fixed,
 publication-ready paragraph from a single published Reuters Climate Monitor
@@ -10,8 +10,10 @@ UTC date exactly, and emits JSON containing:
 
 - one published daily high, normal, and anomaly;
 - a fixed paragraph presenting those values;
-- Celsius-to-Fahrenheit display conversion when requested;
+- Celsius-first temperature pairs with Fahrenheit in parentheses;
 - the Reuters page URL and direct CDN URL for verification; and
+- a publication caution and, for geocoded locations, a link to review the
+  resolved point; and
 - resolved grid coordinates for point lookups.
 
 The output does not produce rankings, multi-location averages, trends, records,
@@ -24,7 +26,7 @@ The skill requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). From the
 skill directory:
 
 ```bash
-uv run climate-monitor generate \
+uv run reuters-climate-paragraph generate \
   --scope global \
   --date YYYY-MM-DD \
   --unit celsius
@@ -33,7 +35,7 @@ uv run climate-monitor generate \
 For a named region:
 
 ```bash
-uv run climate-monitor generate \
+uv run reuters-climate-paragraph generate \
   --scope region \
   --region-set continent \
   --region Europe \
@@ -44,17 +46,51 @@ uv run climate-monitor generate \
 For a location:
 
 ```bash
-uv run climate-monitor generate \
+uv run reuters-climate-paragraph generate \
   --scope location \
   --label "Paris" \
-  --lat 48.8566 \
-  --lng 2.3522 \
   --date YYYY-MM-DD \
   --unit celsius
 ```
 
+The shorter `rcp` command is an alias for `reuters-climate-paragraph`.
+
+## Package for Claude Desktop
+
+Build the portable Skill archive with:
+
+```bash
+make skill-package
+```
+
+This creates `dist/reuters-climate-paragraph-skill.zip`. The archive contains
+the root `SKILL.md`, the locked Python project, and the `src/` sidecar needed
+for runtime lookups. Install or distribute the unzipped
+`reuters-climate-paragraph/` folder using the newsroom's Claude Desktop Skill
+deployment process. The Python wheel and source distribution created by
+`make build` are separate developer artifacts and are not substitutes for the
+Skill archive because they do not provide the root `SKILL.md`.
+
+Location names are geocoded with the cached OpenStreetMap Nominatim service by
+default. Pass `--lat` and `--lng` together to use coordinates supplied by the
+user instead. Nominatim is intended here for occasional, user-triggered
+lookups: requests identify this application, repeated lookups are cached, and
+the skill does not provide autocomplete or bulk geocoding. See the
+[Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/).
+
 See [SKILL.md](SKILL.md) for the Claude operating instructions and the
 complete output policy.
+
+## Reuters style
+
+### Temperature references
+
+> Spell out *Celsius* or *Fahrenheit* on first reference with the word degrees. Do not use centigrade. Use figures except for zero and abbreviate to C and F on second reference. Write *86 degrees Fahrenheit (30 degrees Celsius)* on first reference and *86 F (30 C)* on second reference with a space between the numbers and letter. Spell out minus for clarity, as in *minus 10 C,* not -10 C. Note that temperatures are not hot or cold but high or low.
+
+This skill always presents Celsius first and the Fahrenheit equivalent in
+parentheses, such as `86 degrees Celsius (187 degrees Fahrenheit)`. Anomalies
+follow the same order, such as `2.0 C (3.6 F)`, and the sentence introduces
+the anomaly with “, which is”.
 
 ## Development
 
@@ -76,8 +112,20 @@ Run the full local verification suite:
 make verify
 ```
 
-The tests are offline and use synthetic feed and vector-tile responses. A
-network smoke check is intentionally not part of the default test command.
+`make test` is offline and uses synthetic feed and vector-tile responses.
+`make live-test` checks the current global, Europe, and Paris readings against
+the published Reuters endpoints, plus a pinned historical Paris grid cell and
+the geocoded Swisher, Iowa lookup. `make skill-test` checks the Skill metadata,
+instructions, review cases, and both CLI entrypoints.
+`make verify-fast` is the recommended fast local loop; `make verify` includes
+the slower live checks. Network access is required for live data lookups and
+package installation.
+
+The human-review prompts are listed in
+`tests/fixtures/skill_eval_cases.json`. Run them in the target Claude Desktop
+installation when changing `SKILL.md`; check that each response follows its
+`expected_behavior`, includes every `must_include` item, and avoids every
+`must_not_include` item.
 
 ## Rights and attribution
 

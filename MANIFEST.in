@@ -21,3 +21,4 @@ recursive-include .devcontainer *
 recursive-include .github *
 recursive-include scripts *.py
 recursive-include tests *.py
+recursive-include tests *.json

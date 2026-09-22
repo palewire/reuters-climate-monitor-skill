@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gzip
+from datetime import date
 from typing import Any
 
 import mapbox_vector_tile
@@ -10,11 +11,13 @@ import pytest
 
 from reuters_climate_paragraph.cli import (
     CDN_ROOT,
+    SITE_ROOT,
     ClimateMonitorClient,
     ClimateMonitorError,
     Observation,
     choose_feature,
     format_observation,
+    geocode_place,
     run_generation,
     snap_to_grid,
     validate_coordinates,
@@ -56,14 +59,23 @@ def test_global_generation_uses_exact_date_and_published_delta() -> None:
         ]
     )
 
-    payload = run_generation(client, "global", "2026-09-22", "celsius")
+    payload = run_generation(
+        client,
+        "global",
+        "2026-09-22",
+        "celsius",
+        today=date(2026, 9, 22),
+    )
 
     assert payload["daily_high_c"] == 20.04
     assert payload["anomaly_c"] == 1.234
+    assert payload["caution"].startswith("Verify the date")
     assert payload["paragraph"] == (
-        "On September 22, 2026, the global average high is forecast to reach "
-        "20.0°C, 1.2°C above the 1961–1990 average, according to the Reuters "
-        "Climate Monitor."
+        "On Tuesday, the global average high is forecast to reach 20 degrees "
+        "Celsius (68 degrees Fahrenheit), which is 1.2 C (2.2 F) above the "
+        "1961–1990 average, "
+        "according to the [Reuters Climate "
+        f"Monitor]({SITE_ROOT})."
     )
     assert payload["source_urls"] == [url]
 
@@ -87,7 +99,83 @@ def test_region_generation_filters_the_requested_region() -> None:
     )
 
     assert payload["anomaly"] == 6.3
-    assert "6.3°F above" in payload["paragraph"]
+    assert (
+        "20 degrees Celsius (68 degrees Fahrenheit), which is 3.5 C (6.3 F) above"
+        in payload["paragraph"]
+    )
+
+
+def test_formatting_uses_weekday_today_and_whole_degree_absolute_values() -> None:
+    """Today's copy uses a weekday and rounds absolute values to degrees."""
+    observation = Observation(
+        scope="global",
+        label="the globe",
+        date="2026-09-22",
+        daily_high_c=20,
+        normal_high_c=18,
+        anomaly_c=2,
+        source_urls=(),
+        site_url=SITE_ROOT,
+    )
+
+    today_output = format_observation(
+        observation,
+        "fahrenheit",
+        today=date(2026, 9, 22),
+    )
+    historical_output = format_observation(
+        observation,
+        "fahrenheit",
+        today=date(2026, 9, 23),
+    )
+
+    assert today_output["daily_high"] == 68
+    assert today_output["normal_high"] == 64
+    assert today_output["anomaly"] == 3.6
+    assert "On Tuesday," in today_output["paragraph"]
+    assert (
+        "reach 20 degrees Celsius (68 degrees Fahrenheit), which is 2.0 C (3.6 F) above"
+        in today_output["paragraph"]
+    )
+    assert "On September 22, 2026," in historical_output["paragraph"]
+
+
+def test_formatting_spells_out_zero_and_minus() -> None:
+    """Absolute temperatures use zero and minus instead of symbols."""
+    observation = Observation(
+        scope="global",
+        label="the globe",
+        date="2026-09-22",
+        daily_high_c=-10.4,
+        normal_high_c=-8.2,
+        anomaly_c=-2,
+        source_urls=(),
+        site_url=SITE_ROOT,
+    )
+
+    output = format_observation(observation, "celsius", today=date(2026, 9, 22))
+
+    assert (
+        "reach minus 10 degrees Celsius (13 degrees Fahrenheit), which is "
+        "2.0 C (3.6 F) below"
+    ) in output["paragraph"]
+
+    observation = Observation(
+        scope="global",
+        label="the globe",
+        date="2026-09-22",
+        daily_high_c=0.2,
+        normal_high_c=0.1,
+        anomaly_c=0,
+        source_urls=(),
+        site_url=SITE_ROOT,
+    )
+    output = format_observation(observation, "celsius", today=date(2026, 9, 22))
+
+    assert (
+        "reach zero degrees Celsius (32 degrees Fahrenheit), which is zero C (zero F) at"
+        in output["paragraph"]
+    )
 
 
 def test_missing_date_is_an_error_instead_of_a_silent_fallback() -> None:
@@ -144,6 +232,7 @@ def test_location_land_fallback_and_verification_url() -> None:
 
     client = ClimateMonitorClient(
         range_source_factory=lambda _: lambda _offset, _length: b"",
+        geocoder=lambda _label: (0, 0),
     )
     original_reader = __import__("reuters_climate_paragraph.cli", fromlist=["Reader"])
     monkeypatch = pytest.MonkeyPatch()
@@ -155,17 +244,37 @@ def test_location_land_fallback_and_verification_url() -> None:
             "2026-09-22",
             "celsius",
             label="Test Coast",
-            lat=0,
-            lng=0,
         )
     finally:
         monkeypatch.undo()
 
     assert payload["land_swapped"] is True
     assert payload["coordinates"] is not None
-    assert "nearest monitor grid cell to Test Coast" in payload["paragraph"]
+    assert "the high in Test Coast" in payload["paragraph"]
     assert "lat=0" in payload["site_url"]
+    assert payload["geocoder_url"].startswith("https://www.openstreetmap.org/")
     assert payload["source_urls"][0].endswith("/2026-09-22/t2m_max_delta_data.pmtiles")
+
+
+def test_nominatim_results_are_cached(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+) -> None:
+    """A place lookup uses the local cache on repeated requests."""
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    calls: list[str] = []
+
+    def fake_fetch(url: str) -> object:
+        calls.append(url)
+        return [{"lat": "48.8566", "lon": "2.3522"}]
+
+    monkeypatch.setattr(
+        "reuters_climate_paragraph.cli.fetch_nominatim_json",
+        fake_fetch,
+    )
+
+    assert geocode_place("Paris") == (48.8566, 2.3522)
+    assert geocode_place(" paris ") == (48.8566, 2.3522)
+    assert len(calls) == 1
 
 
 def test_choose_feature_ignores_non_point_features() -> None:

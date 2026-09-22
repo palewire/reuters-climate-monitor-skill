@@ -20,7 +20,7 @@ by this repository's MIT license.
 
 - `SKILL.md`: Claude operating instructions and output policy.
 - `src/reuters_climate_paragraph/`: Click CLI and Reuters feed/tile client.
-- `tests/`: Offline tests using synthetic feed and vector-tile responses.
+- `tests/`: Offline tests plus opt-in live checks against Reuters data.
 - `Makefile`: Development, verification, and package commands.
 - `.github/workflows/`: CI, CodeQL, and Scorecard workflows.
 
@@ -28,19 +28,36 @@ by this repository's MIT license.
 
 Use the template-based workflow:
 
+```
+
+Run the Skill-specific contract and entrypoint checks with:
+
 ```bash
+make skill-test
+```
+
+Build the distributable Claude Skill archive with:
+
+```bash
+make skill-package
+```
+
+The human-review prompt set lives in `tests/fixtures/skill_eval_cases.json`.bash
 make bootstrap
 make check
 make verify
 ```
 
 `make check` runs diff, Ruff, formatting, ty, dependency, and workflow checks.
-`make verify` also runs tests, package validation, and the wheel build.
+`make verify-fast` runs those checks, offline tests, package-manifest checks,
+and the wheel build without network requests. `make verify` adds the slower
+live Reuters checks.
 
 Run focused commands when iterating:
 
 ```bash
 make test
+make live-test
 make type-check
 make package-check PACKAGE=reuters_climate_paragraph
 make coverage PACKAGE=reuters_climate_paragraph

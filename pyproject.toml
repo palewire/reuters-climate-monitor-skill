@@ -28,12 +28,13 @@ classifiers = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/palewire/reuters-climate-monitor-skill#readme"
-Source = "https://github.com/palewire/reuters-climate-monitor-skill"
-Issues = "https://github.com/palewire/reuters-climate-monitor-skill/issues"
+Documentation = "https://github.com/palewire/reuters-climate-paragraph#readme"
+Source = "https://github.com/palewire/reuters-climate-paragraph"
+Issues = "https://github.com/palewire/reuters-climate-paragraph/issues"
 
 [project.scripts]
-climate-monitor = "reuters_climate_paragraph.cli:cli"
+reuters-climate-paragraph = "reuters_climate_paragraph.cli:cli"
+rcp = "reuters_climate_paragraph.cli:cli"
 
 [dependency-groups]
 dev = [
@@ -72,6 +73,7 @@ test-extras = [
 where = ["src"]
 
 [tool.setuptools_scm]
+fallback_version = "0.0.0"
 
 [tool.ruff]
 target-version = "py311"

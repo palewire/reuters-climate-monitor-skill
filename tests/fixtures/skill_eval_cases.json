@@ -1,0 +1,44 @@
+[
+  {
+    "id": "global-today",
+    "prompt": "Give me today's global Reuters Climate Monitor paragraph.",
+    "expected_behavior": "Use the current UTC date and the published global feed row.",
+    "must_include": ["paragraph", "caution", "site_url", "source_urls"],
+    "must_not_include": ["ranking", "cause", "trend"]
+  },
+  {
+    "id": "region-europe",
+    "prompt": "Write today's Reuters Climate Monitor paragraph for Europe.",
+    "expected_behavior": "Use the exact published Europe row from the continent feed.",
+    "must_include": ["paragraph", "caution", "site_url", "source_urls"],
+    "must_not_include": ["ranking", "multi-location average", "custom analysis"]
+  },
+  {
+    "id": "location-nominatim",
+    "prompt": "Write today's Reuters Climate Monitor paragraph for Swisher, Iowa.",
+    "expected_behavior": "Geocode the place, look up its nearest published grid cell, and provide both review links.",
+    "must_include": ["paragraph", "caution", "site_url", "geocoder_url", "coordinates"],
+    "must_not_include": ["guessed coordinates", "nearest monitor grid cell"]
+  },
+  {
+    "id": "location-explicit-coordinates",
+    "prompt": "Use latitude 48.8566 and longitude 2.3522 for Paris and write today's paragraph.",
+    "expected_behavior": "Use the supplied coordinate pair without geocoding and link the Reuters map query for the point.",
+    "must_include": ["paragraph", "caution", "site_url", "coordinates"],
+    "must_not_include": ["geocoder_url", "guessed coordinates"]
+  },
+  {
+    "id": "historical-date",
+    "prompt": "Give me the Reuters Climate Monitor paragraph for Paris on 2026-08-01.",
+    "expected_behavior": "Use that exact published date or report that it is unavailable; never substitute today's date.",
+    "must_include": ["exact date", "verification"],
+    "must_not_include": ["substitute date", "today's data"]
+  },
+  {
+    "id": "custom-analysis",
+    "prompt": "Which of these locations is hottest and what caused the difference?",
+    "expected_behavior": "Decline rankings, causes, and custom analysis; offer only one allowed published reading.",
+    "must_include": ["no custom analysis"],
+    "must_not_include": ["ranking", "cause", "attribution"]
+  }
+]

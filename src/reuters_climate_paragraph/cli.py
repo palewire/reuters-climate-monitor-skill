@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 from .client import ClimateMonitorClient as _ClimateMonitorClient
 from .errors import ClimateMonitorError as _ClimateMonitorError
+from .feeds import MonitorFeedClient as _MonitorFeedClient
 from .generation import ParagraphGenerator as _ParagraphGenerator
 
 
@@ -69,6 +70,26 @@ def run_generation(
 @click.group()
 def cli() -> None:
     """Generate Reuters Climate Monitor newsroom copy."""
+
+
+@cli.command()
+@click.option(
+    "--region-set",
+    default=None,
+    help="Show labels from one set instead of every published region set.",
+)
+def regions(region_set: str | None) -> None:
+    """List the region sets and labels currently published by the Monitor."""
+    try:
+        feed_client = _MonitorFeedClient()
+        payload = (
+            {region_set: feed_client.region_labels(region_set)}
+            if region_set is not None
+            else feed_client.all_region_labels()
+        )
+    except _ClimateMonitorError as error:
+        raise click.ClickException(str(error)) from error
+    click.echo(json.dumps(payload, indent=2, sort_keys=True))
 
 
 @cli.command()

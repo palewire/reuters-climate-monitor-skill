@@ -1,10 +1,69 @@
 A portable skill for AI assistants for producing a publication-ready paragraph
 from the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
 
-## Use
+## Use with an AI assistant
+
+The intended newsroom workflow is to ask the assistant for a paragraph in plain
+language. The skill looks up the exact published Reuters Climate Monitor row
+and returns only the ready-to-use paragraph.
+
+### Global
+
+**Input**
+
+> Write today's Reuters Climate Monitor paragraph for the globe.
+
+**Output**
+
+> On Tuesday, the global average high is forecast to reach 20 degrees Celsius
+> (68 degrees Fahrenheit), which is 1.2 C (2.2 F) above the 1961–1990 average,
+> according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
+
+### Region
+
+**Input**
+
+> Write today's Reuters Climate Monitor paragraph for Europe.
+
+**Output**
+
+> On Tuesday, the average high in Europe is forecast to reach 18 degrees
+> Celsius (65 degrees Fahrenheit), which is 3.4 C (6.0 F) above the 1961–1990
+> average, according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
+
+### Location
+
+**Input**
+
+> Write the Reuters Climate Monitor paragraph for Paris on Aug. 1, 2026. Do
+> not use latitude or longitude; resolve the place name.
+
+**Output**
+
+> On August 1, 2026, the high in Paris reached 28 degrees Celsius (83 degrees
+> Fahrenheit), which is 5.3 C (9.5 F) above the 1961–1990 average, according
+> to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
+
+## Use from the CLI
 
 The skill requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). From the
 skill directory:
+
+To list every region set and label currently published by the Monitor:
+
+```bash
+uv run reuters-climate-paragraph regions
+```
+
+To list labels from one region set:
+
+```bash
+uv run reuters-climate-paragraph regions \
+  --region-set continent
+```
+
+These commands return JSON and read the current public feeds, so they are the
+best source when a user asks which regions are supported.
 
 ```bash
 uv run reuters-climate-paragraph generate \
@@ -33,10 +92,10 @@ uv run reuters-climate-paragraph generate \
 
 The shorter `rcp` command is an alias for `reuters-climate-paragraph`.
 
-## Example output
+## CLI example output
 
 The CLI prints JSON containing the published values, the ready-to-use
-paragraph, and links for verification. For example:
+paragraph, and links for verification. The same global example above produces:
 
 ```console
 $ uv run reuters-climate-paragraph generate \
@@ -62,8 +121,67 @@ $ uv run reuters-climate-paragraph generate \
 }
 ```
 
-Location requests include the resolved grid-cell coordinates. Coordinates can
-be supplied directly when a user has already identified the place:
+The regional example produces:
+
+```console
+$ uv run reuters-climate-paragraph generate \
+    --scope region \
+    --region-set continent \
+    --region Europe \
+    --date 2026-09-22
+{
+  "anomaly": 3.4,
+  "anomaly_c": 3.36,
+  "anomaly_direction": "above",
+  "caution": "Verify the date, place, and figures against the linked Reuters Climate Monitor before publication.",
+  "coordinates": null,
+  "daily_high": 18,
+  "daily_high_c": 18.12,
+  "date": "2026-09-22",
+  "geocoder_url": null,
+  "label": "Europe",
+  "land_swapped": false,
+  "normal_high": 15,
+  "normal_high_c": 14.76,
+  "paragraph": "On Tuesday, the average high in Europe is forecast to reach 18 degrees Celsius (65 degrees Fahrenheit), which is 3.4 C (6.0 F) above the 1961\u20131990 average, according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).",
+  "scope": "region",
+  "site_url": "https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/"
+}
+```
+
+Location requests can omit coordinates. In that case, the sidecar geocodes the
+place name and includes the geocoder link in its verification details:
+
+```console
+$ uv run reuters-climate-paragraph generate \
+    --scope location \
+    --label "Paris" \
+    --date 2026-08-01
+{
+  "anomaly": 5.3,
+  "anomaly_c": 5.3,
+  "anomaly_direction": "above",
+  "caution": "Verify the date, place, and figures against the linked Reuters Climate Monitor before publication.",
+  "coordinates": [
+    2.25,
+    48.75
+  ],
+  "daily_high": 28,
+  "daily_high_c": 28.200001,
+  "date": "2026-08-01",
+  "geocoder_url": "https://www.openstreetmap.org/?mlat=48.853495&mlon=2.348391#map=12/48.853495/2.348391",
+  "label": "Paris",
+  "land_swapped": false,
+  "normal_high": 23,
+  "normal_high_c": 22.9,
+  "paragraph": "On August 1, 2026, the high in Paris reached 28 degrees Celsius (83 degrees Fahrenheit), which is 5.3 C (9.5 F) above the 1961\u20131990 average, according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).",
+  "scope": "location",
+  "site_url": "https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/?lat=48.8535&lng=2.3484&zoom=6&place=Paris"
+}
+```
+
+When a user has already identified the place with coordinates, pass them
+directly instead:
 
 ```console
 $ uv run reuters-climate-paragraph generate \

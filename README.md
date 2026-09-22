@@ -216,6 +216,27 @@ $ uv run reuters-climate-paragraph generate \
 The values above are examples of the output shape; the CLI always fetches the
 requested date from the published feeds.
 
+## Install the Python package
+
+The Python sidecar is also distributed as a standard package on PyPI. After a
+release, install the CLI into a tool environment with:
+
+```bash
+uv tool install reuters-climate-paragraph
+```
+
+For a one-off command without installing it permanently:
+
+```bash
+uvx reuters-climate-paragraph generate \
+  --scope global \
+  --date YYYY-MM-DD
+```
+
+The PyPI package provides the Python library and CLI only. It does not include
+the root `SKILL.md`, so use the [portable Skill archive](#package-for-claude-desktop)
+when installing the complete Claude Desktop Skill.
+
 ## Package for Claude Desktop
 
 Build the portable Skill archive with:

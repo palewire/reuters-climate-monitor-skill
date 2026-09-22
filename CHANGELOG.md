@@ -8,6 +8,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Publish the Python sidecar and CLI as a standard PyPI package alongside the
+  portable Claude Desktop Skill archive.
+- Add a `regions` command that lists the region sets and labels currently
+  published by the Reuters Climate Monitor.
+
 ### Changed
 
 - Remove the unnecessary unit option; output is always the fixed Celsius-first

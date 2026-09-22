@@ -35,8 +35,8 @@ and returns only the ready-to-use paragraph.
 
 **Input**
 
-> Write the Reuters Climate Monitor paragraph for Paris on Aug. 1, 2026. Use
-> 48.8566 latitude and 2.3522 longitude.
+> Write the Reuters Climate Monitor paragraph for Paris on Aug. 1, 2026. Do
+> not use latitude or longitude; resolve the place name.
 
 **Output**
 
@@ -133,8 +133,39 @@ $ uv run reuters-climate-paragraph generate \
 }
 ```
 
-Location requests include the resolved grid-cell coordinates. Coordinates can
-be supplied directly when a user has already identified the place:
+Location requests can omit coordinates. In that case, the sidecar geocodes the
+place name and includes the geocoder link in its verification details:
+
+```console
+$ uv run reuters-climate-paragraph generate \
+    --scope location \
+    --label "Paris" \
+    --date 2026-08-01
+{
+  "anomaly": 5.3,
+  "anomaly_c": 5.3,
+  "anomaly_direction": "above",
+  "caution": "Verify the date, place, and figures against the linked Reuters Climate Monitor before publication.",
+  "coordinates": [
+    2.25,
+    48.75
+  ],
+  "daily_high": 28,
+  "daily_high_c": 28.200001,
+  "date": "2026-08-01",
+  "geocoder_url": "https://www.openstreetmap.org/?mlat=48.853495&mlon=2.348391#map=12/48.853495/2.348391",
+  "label": "Paris",
+  "land_swapped": false,
+  "normal_high": 23,
+  "normal_high_c": 22.9,
+  "paragraph": "On August 1, 2026, the high in Paris reached 28 degrees Celsius (83 degrees Fahrenheit), which is 5.3 C (9.5 F) above the 1961\u20131990 average, according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).",
+  "scope": "location",
+  "site_url": "https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/?lat=48.8535&lng=2.3484&zoom=6&place=Paris"
+}
+```
+
+When a user has already identified the place with coordinates, pass them
+directly instead:
 
 ```console
 $ uv run reuters-climate-paragraph generate \

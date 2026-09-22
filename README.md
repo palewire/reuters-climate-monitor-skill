@@ -55,6 +55,103 @@ uv run reuters-climate-paragraph generate \
 
 The shorter `rcp` command is an alias for `reuters-climate-paragraph`.
 
+## Result examples
+
+The Skill returns one paragraph, a publication caution, and verification
+links. The values below illustrate the response shapes; live values change as
+new Reuters Climate Monitor data is published.
+
+### Global reading
+
+**Request:** “Give me today’s global Reuters Climate Monitor paragraph.”
+
+> On Tuesday, the global average high is forecast to reach 20 degrees Celsius
+> (68 degrees Fahrenheit), which is 1.2 C (2.2 F) above the 1961–1990 average,
+> according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
+
+**Caution:** Verify the date, place, and figures against the linked Reuters
+Climate Monitor before publication.
+
+**Verification:** The response includes the Reuters Climate Monitor page and
+the direct global feed URL:
+`https://graphics.thomsonreuters.com/newsapps_climate-forecast/daily-global-averages/latest-daily-averages.json`.
+
+### Regional reading
+
+**Request:** “Write today’s Reuters Climate Monitor paragraph for Europe.”
+
+> On Tuesday, the average high in Europe is forecast to reach 20 degrees
+> Celsius (68 degrees Fahrenheit), which is 3.5 C (6.3 F) above the 1961–1990
+> average, according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
+
+**Caution:** Verify the date, place, and figures against the linked Reuters
+Climate Monitor before publication.
+
+**Verification:** The response includes the Reuters Climate Monitor page and
+the direct continent feed URL:
+`https://graphics.thomsonreuters.com/newsapps_climate-forecast/region-sets/continent/latest-daily-averages.json`.
+
+### Named location resolved with the default geocoder
+
+**Request:** “Write today’s Reuters Climate Monitor paragraph for Swisher,
+Iowa.”
+
+> On Tuesday, the high in Swisher, Iowa is forecast to reach 21 degrees Celsius
+> (70 degrees Fahrenheit), which is 1.1 C (2.0 F) above the 1961–1990 average,
+> according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
+
+**Caution:** Verify the date, place, and figures against the linked Reuters
+Climate Monitor before publication.
+
+**Verification:** The response includes the Reuters map query for the resolved
+point, the direct PMTiles URL, the resolved grid coordinates
+`(-91.75, 41.75)`, and an OpenStreetMap link where the geocoded point can be
+reviewed:
+<https://www.openstreetmap.org/?mlat=41.845622&mlon=-91.692970#map=12/41.845622/-91.692970>.
+
+### Location supplied with explicit coordinates
+
+**Request:** “Use latitude 48.8566 and longitude 2.3522 for Paris and write
+today’s paragraph.”
+
+> On Tuesday, the high in Paris is forecast to reach 27 degrees Celsius (81
+> degrees Fahrenheit), which is 4.1 C (7.4 F) above the 1961–1990 average,
+> according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
+
+**Caution:** Verify the date, place, and figures against the linked Reuters
+Climate Monitor before publication.
+
+**Verification:** The response includes the Reuters map query for the supplied
+point, the direct PMTiles URL, and the resolved monitor grid coordinates
+`(2.25, 48.75)`. It does not include a geocoder URL because the coordinates
+were supplied by the user.
+
+### Historical-date reading
+
+**Request:** “Give me the Reuters Climate Monitor paragraph for Paris on
+2026-08-01.”
+
+> On August 1, 2026, the high in Paris is forecast to reach 27 degrees Celsius
+> (81 degrees Fahrenheit), which is 4.1 C (7.4 F) above the 1961–1990 average,
+> according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
+
+**Caution:** Verify the date, place, and figures against the linked Reuters
+Climate Monitor before publication.
+
+**Verification:** The response keeps the requested date, shows the resolved
+monitor grid coordinates, and links the exact dated PMTiles object. If that
+date is not published, the Skill reports that plainly and does not substitute
+today’s data.
+
+### Custom analysis request
+
+**Request:** “Which of these locations is hottest and what caused the
+difference?”
+
+**Response:** I can provide one published Reuters Climate Monitor reading for
+one requested geography, but I cannot rank locations, explain causes, or add
+custom analysis. Ask for a globe, region, or location reading instead.
+
 ## Package for Claude Desktop
 
 Build the portable Skill archive with:

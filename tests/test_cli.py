@@ -9,23 +9,24 @@ from typing import Any
 import mapbox_vector_tile
 import pytest
 
-from reuters_climate_paragraph.cli import (
+from reuters_climate_paragraph.cli import run_generation
+from reuters_climate_paragraph.client import ClimateMonitorClient
+from reuters_climate_paragraph.errors import ClimateMonitorError
+from reuters_climate_paragraph.geocoder import NominatimGeocoder, validate_coordinates
+from reuters_climate_paragraph.map_data import (
+    PointDataReader,
+    choose_feature,
+    snap_to_grid,
+)
+from reuters_climate_paragraph.models import Observation
+from reuters_climate_paragraph.rendering import format_observation
+from reuters_climate_paragraph.requests import validate_region_request
+from reuters_climate_paragraph.urls import (
     ERA5_MAP_ROOT,
     HRES_MAP_ROOT,
     SITE_ROOT,
-    ClimateMonitorClient,
-    ClimateMonitorError,
-    Observation,
     anomaly_map_url,
-    choose_feature,
-    format_observation,
-    run_generation,
-    snap_to_grid,
-    validate_coordinates,
-    validate_region_request,
 )
-from reuters_climate_paragraph.geocoder import NominatimGeocoder
-from reuters_climate_paragraph.map_data import PointDataReader
 
 
 def feed_row(day: str, **extra: Any) -> dict[str, Any]:

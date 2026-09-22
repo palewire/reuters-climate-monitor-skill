@@ -7,13 +7,13 @@ from datetime import UTC, datetime
 
 import pytest
 
-from reuters_climate_paragraph.cli import (
+from reuters_climate_paragraph.client import ClimateMonitorClient
+from reuters_climate_paragraph.rendering import format_observation
+from reuters_climate_paragraph.urls import (
     CDN_ROOT,
     ERA5_MAP_ROOT,
     HRES_MAP_ROOT,
     SITE_ROOT,
-    ClimateMonitorClient,
-    format_observation,
 )
 
 PINNED_DATE = "2026-08-01"

@@ -582,6 +582,25 @@ def format_anomaly_temperature(value: float, unit_abbreviation: str) -> str:
     return f"{number} {unit_abbreviation}"
 
 
+def format_temperature_pair(value_c: float, *, anomaly: bool = False) -> str:
+    """Format Celsius first with the Fahrenheit equivalent in parentheses.
+
+    Args:
+        value_c: Temperature in Celsius.
+        anomaly: Whether to format the value as a one-decimal anomaly.
+
+    Returns:
+        A Reuters-style Celsius/Fahrenheit temperature pair.
+    """
+    if anomaly:
+        celsius = format_anomaly_temperature(value_c, "C")
+        fahrenheit = format_anomaly_temperature(value_c * 9 / 5, "F")
+    else:
+        celsius = format_absolute_temperature(value_c, "Celsius")
+        fahrenheit = format_absolute_temperature(value_c * 9 / 5 + 32, "Fahrenheit")
+    return f"{celsius} ({fahrenheit})"
+
+
 def format_observation(
     observation: Observation,
     unit: str,
@@ -605,12 +624,16 @@ def format_observation(
         raise ClimateMonitorError("Unit must be celsius or fahrenheit")
     factor = 1 if unit == "celsius" else 9 / 5
     offset = 0 if unit == "celsius" else 32
-    unit_name = "Celsius" if unit == "celsius" else "Fahrenheit"
-    unit_abbreviation = "C" if unit == "celsius" else "F"
     daily = observation.daily_high_c * factor + offset
     normal = observation.normal_high_c * factor + offset
     anomaly = observation.anomaly_c * factor
-    direction = "above" if anomaly > 0 else "below" if anomaly < 0 else "at"
+    direction = (
+        "above"
+        if observation.anomaly_c > 0
+        else "below"
+        if observation.anomaly_c < 0
+        else "at"
+    )
     parsed_date = date.fromisoformat(observation.date)
     current_date = today or datetime.now(UTC).date()
     date_label = (
@@ -626,8 +649,8 @@ def format_observation(
         subject = f"the high in the nearest monitor grid cell to {observation.label}"
     paragraph = (
         f"On {date_label}, {subject} is forecast to reach "
-        f"{format_absolute_temperature(daily, unit_name)}, "
-        f"{format_anomaly_temperature(anomaly, unit_abbreviation)} {direction} "
+        f"{format_temperature_pair(observation.daily_high_c)}, "
+        f"{format_temperature_pair(observation.anomaly_c, anomaly=True)} {direction} "
         "the 1961–1990 average, "
         f"according to the [Reuters Climate Monitor]({SITE_ROOT})."
     )

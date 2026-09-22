@@ -14,9 +14,9 @@ compatibility: >
 
 # Reuters Climate Monitor paragraph
 
-Use the Python sidecar in this skill for every data lookup. It may present one
-published reading in a fixed sentence and convert its units, but it must not
-perform analysis. Do not calculate the anomaly from the daily and normal
+Use the Python sidecar in this skill for every data lookup. It presents one
+published reading in a fixed sentence with Celsius first and Fahrenheit in
+parentheses, but it must not perform analysis. Do not calculate the anomaly from the daily and normal
 temperatures: use the published `t2m_max_delta` field. Do not use a previous
 answer, a cached value, a screenshot, or a legacy feed.
 
@@ -30,8 +30,8 @@ answer, a cached value, a screenshot, or a legacy feed.
      geocoder or ask the user for coordinates. Never guess coordinates.
 2. Resolve the date as the current UTC date. Pass it explicitly to the
    sidecar; this makes the result reproducible.
-3. Ask for Celsius or Fahrenheit if the user did not specify a unit. Use
-   Celsius when a default is required.
+3. Use the fixed Celsius-first, Fahrenheit-in-parentheses presentation. Do not
+   ask the user to choose a unit.
 4. Run the sidecar from this skill directory:
 
    ```bash
@@ -94,7 +94,7 @@ The sidecar may return only:
 
 - the exact published date and one published reading;
 - the published daily high, 1961–1990 normal, and `t2m_max_delta`;
-- Celsius-to-Fahrenheit conversion for display when requested;
+- Celsius-first temperature pairs with the Fahrenheit equivalent in parentheses;
 - fixed `above`, `below`, or `at` wording based only on the published anomaly's
   sign;
 - the requested geography label and, for a point, the resolved monitor grid
@@ -130,6 +130,9 @@ paragraph into a stronger claim. In particular:
 ### Temperature references
 
 > Spell out *Celsius* or *Fahrenheit* on first reference with the word degrees. Do not use centigrade. Use figures except for zero and abbreviate to C and F on second reference. Write *86 degrees Fahrenheit (30 degrees Celsius)* on first reference and *86 F (30 C)* on second reference with a space between the numbers and letter. Spell out minus for clarity, as in *minus 10 C,* not -10 C. Note that temperatures are not hot or cold but high or low.
+
+Always put Celsius first and the Fahrenheit equivalent in parentheses. For
+example: `86 degrees Celsius (187 degrees Fahrenheit)` and `2.0 C (3.6 F)`.
 
 ## Development and tests
 

@@ -10,7 +10,7 @@ UTC date exactly, and emits JSON containing:
 
 - one published daily high, normal, and anomaly;
 - a fixed paragraph presenting those values;
-- Celsius-to-Fahrenheit display conversion when requested;
+- Celsius-first temperature pairs with Fahrenheit in parentheses;
 - the Reuters page URL and direct CDN URL for verification; and
 - resolved grid coordinates for point lookups.
 
@@ -61,6 +61,10 @@ complete output policy.
 ### Temperature references
 
 > Spell out *Celsius* or *Fahrenheit* on first reference with the word degrees. Do not use centigrade. Use figures except for zero and abbreviate to C and F on second reference. Write *86 degrees Fahrenheit (30 degrees Celsius)* on first reference and *86 F (30 C)* on second reference with a space between the numbers and letter. Spell out minus for clarity, as in *minus 10 C,* not -10 C. Note that temperatures are not hot or cold but high or low.
+
+This skill always presents Celsius first and the Fahrenheit equivalent in
+parentheses, such as `86 degrees Celsius (187 degrees Fahrenheit)`. Anomalies
+follow the same order, such as `2.0 C (3.6 F)`.
 
 ## Development
 

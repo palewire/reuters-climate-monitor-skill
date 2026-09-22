@@ -19,6 +19,7 @@ from pmtiles.reader import Reader
 
 from .errors import ClimateMonitorError
 from .geocoder import NominatimGeocoder, validate_coordinates
+from .temperature import DEFAULT_TEMPERATURE_FORMATTER
 
 CDN_ROOT = "https://graphics.thomsonreuters.com/newsapps_climate-forecast"
 HRES_MAP_ROOT = (
@@ -58,6 +59,45 @@ REGION_SETS = {
 
 JsonFetcher = Callable[[str], object]
 Geocoder = Callable[[str], tuple[float, float]]
+
+
+def format_absolute_temperature(value: float, unit_name: str) -> str:
+    """Format an absolute temperature through the shared formatter.
+
+    Args:
+        value: Absolute temperature in the selected display unit.
+        unit_name: Full unit name, either ``Celsius`` or ``Fahrenheit``.
+
+    Returns:
+        A Reuters-style whole-degree temperature.
+    """
+    return DEFAULT_TEMPERATURE_FORMATTER.format_absolute(value, unit_name)
+
+
+def format_anomaly_temperature(value: float, unit_abbreviation: str) -> str:
+    """Format an anomaly through the shared formatter.
+
+    Args:
+        value: Anomaly temperature in the selected display unit.
+        unit_abbreviation: Unit abbreviation, either ``C`` or ``F``.
+
+    Returns:
+        A Reuters-style one-decimal anomaly.
+    """
+    return DEFAULT_TEMPERATURE_FORMATTER.format_anomaly(value, unit_abbreviation)
+
+
+def format_temperature_pair(value_c: float, *, anomaly: bool = False) -> str:
+    """Format a Celsius/Fahrenheit pair through the shared formatter.
+
+    Args:
+        value_c: Temperature in degrees Celsius.
+        anomaly: Whether to format the value as a one-decimal anomaly.
+
+    Returns:
+        A Reuters-style Celsius-first temperature pair.
+    """
+    return DEFAULT_TEMPERATURE_FORMATTER.format_pair(value_c, anomaly=anomaly)
 
 
 def anomaly_map_url(day: str, *, today: date | None = None) -> str:
@@ -607,60 +647,6 @@ def choose_feature(
         "coordinates": chosen["coordinates"],
         "land_swapped": chosen is not nearest,
     }
-
-
-def format_absolute_temperature(value: float, unit_name: str) -> str:
-    """Format an absolute temperature using Reuters style.
-
-    Args:
-        value: Absolute temperature in the selected display unit.
-        unit_name: Full unit name, either ``Celsius`` or ``Fahrenheit``.
-
-    Returns:
-        A whole-degree temperature with ``degrees`` and a clear minus sign.
-    """
-    rounded = round(value)
-    if rounded == 0:
-        number = "zero"
-    elif rounded < 0:
-        number = f"minus {abs(rounded)}"
-    else:
-        number = str(rounded)
-    return f"{number} degrees {unit_name}"
-
-
-def format_anomaly_temperature(value: float, unit_abbreviation: str) -> str:
-    """Format an anomaly using Reuters style.
-
-    Args:
-        value: Anomaly temperature in the selected display unit.
-        unit_abbreviation: Unit abbreviation, either ``C`` or ``F``.
-
-    Returns:
-        A one-decimal anomaly with a space before its unit abbreviation.
-    """
-    rounded = round(abs(value), 1)
-    number = "zero" if rounded == 0 else f"{rounded:.1f}"
-    return f"{number} {unit_abbreviation}"
-
-
-def format_temperature_pair(value_c: float, *, anomaly: bool = False) -> str:
-    """Format Celsius first with the Fahrenheit equivalent in parentheses.
-
-    Args:
-        value_c: Temperature in Celsius.
-        anomaly: Whether to format the value as a one-decimal anomaly.
-
-    Returns:
-        A Reuters-style Celsius/Fahrenheit temperature pair.
-    """
-    if anomaly:
-        celsius = format_anomaly_temperature(value_c, "C")
-        fahrenheit = format_anomaly_temperature(value_c * 9 / 5, "F")
-    else:
-        celsius = format_absolute_temperature(value_c, "Celsius")
-        fahrenheit = format_absolute_temperature(value_c * 9 / 5 + 32, "Fahrenheit")
-    return f"{celsius} ({fahrenheit})"
 
 
 def format_observation(

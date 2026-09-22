@@ -26,7 +26,7 @@ The skill requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). From the
 skill directory:
 
 ```bash
-uv run climate-monitor generate \
+uv run reuters-climate-monitor generate \
   --scope global \
   --date YYYY-MM-DD \
   --unit celsius
@@ -35,7 +35,7 @@ uv run climate-monitor generate \
 For a named region:
 
 ```bash
-uv run climate-monitor generate \
+uv run reuters-climate-monitor generate \
   --scope region \
   --region-set continent \
   --region Europe \
@@ -46,12 +46,14 @@ uv run climate-monitor generate \
 For a location:
 
 ```bash
-uv run climate-monitor generate \
+uv run reuters-climate-monitor generate \
   --scope location \
   --label "Paris" \
   --date YYYY-MM-DD \
   --unit celsius
 ```
+
+The shorter `rcm` command is an alias for `reuters-climate-monitor`.
 
 Location names are geocoded with the cached OpenStreetMap Nominatim service by
 default. Pass `--lat` and `--lng` together to use coordinates supplied by the

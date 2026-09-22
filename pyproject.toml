@@ -33,7 +33,8 @@ Source = "https://github.com/palewire/reuters-climate-monitor-skill"
 Issues = "https://github.com/palewire/reuters-climate-monitor-skill/issues"
 
 [project.scripts]
-climate-monitor = "reuters_climate_paragraph.cli:cli"
+reuters-climate-monitor = "reuters_climate_paragraph.cli:cli"
+rcm = "reuters_climate_paragraph.cli:cli"
 
 [dependency-groups]
 dev = [

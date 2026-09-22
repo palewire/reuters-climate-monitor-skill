@@ -11,7 +11,7 @@ import urllib.request
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass
 from datetime import date
-from typing import Any
+from typing import Any, cast
 
 import click
 import mapbox_vector_tile
@@ -42,7 +42,7 @@ REGION_SETS = {
     "country",
 }
 
-JsonFetcher = Callable[[str], Any]
+JsonFetcher = Callable[[str], object]
 
 
 class ClimateMonitorError(RuntimeError):
@@ -58,7 +58,7 @@ class Observation:
         label: Human-readable geography label.
         date: Exact UTC date represented by the reading.
         daily_high_c: Published daily high in Celsius.
-        normal_high_c: Published 1961–1990 normal in Celsius.
+        normal_high_c: Published 1961-1990 normal in Celsius.
         anomaly_c: Published daily-high anomaly in Celsius.
         source_urls: Direct Reuters CDN URLs used for the lookup.
         site_url: Reuters Climate Monitor page URL for visual verification.
@@ -223,7 +223,7 @@ class ClimateMonitorClient:
         )
 
 
-def fetch_json(url: str) -> Any:
+def fetch_json(url: str) -> object:
     """Fetch JSON from a Reuters CDN URL.
 
     Args:
@@ -238,12 +238,12 @@ def fetch_json(url: str) -> Any:
     Example:
         ``raw = fetch_json("https://example.test/feed.json")``
     """
-    request = urllib.request.Request(
+    request = urllib.request.Request(  # noqa: S310 - Reuters HTTPS URL.
         url,
         headers={"Accept": "application/json", "User-Agent": "ReutersClimateSkill/0.1"},
     )
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
             return json.load(response)
     except (OSError, urllib.error.URLError, json.JSONDecodeError) as error:
         raise ClimateMonitorError(
@@ -278,7 +278,7 @@ def http_range_source(url: str) -> Callable[[int, int], bytes]:
             ClimateMonitorError: If the CDN returns an incomplete range.
         """
         end = offset + length - 1
-        request = urllib.request.Request(
+        request = urllib.request.Request(  # noqa: S310 - Reuters HTTPS URL.
             url,
             headers={
                 "Range": f"bytes={offset}-{end}",
@@ -286,7 +286,7 @@ def http_range_source(url: str) -> Callable[[int, int], bytes]:
             },
         )
         try:
-            with urllib.request.urlopen(request, timeout=30) as response:
+            with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
                 data = response.read()
         except (OSError, urllib.error.URLError) as error:
             raise ClimateMonitorError(
@@ -301,7 +301,7 @@ def http_range_source(url: str) -> Callable[[int, int], bytes]:
     return get_bytes
 
 
-def as_rows(raw: Any, source_url: str) -> list[dict[str, Any]]:
+def as_rows(raw: object, source_url: str) -> list[dict[str, Any]]:
     """Validate that a feed response is a list of object rows.
 
     Args:
@@ -316,10 +316,10 @@ def as_rows(raw: Any, source_url: str) -> list[dict[str, Any]]:
     """
     if not isinstance(raw, list) or not all(isinstance(row, dict) for row in raw):
         raise ClimateMonitorError(f"Reuters feed is not a row array: {source_url}")
-    return raw
+    return cast("list[dict[str, Any]]", raw)
 
 
-def select_exact_row(raw: Any, day: str, label: str) -> dict[str, Any]:
+def select_exact_row(raw: object, day: str, label: str) -> dict[str, Any]:
     """Select one row whose date starts with the requested UTC date.
 
     Args:

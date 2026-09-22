@@ -1,42 +1,176 @@
+[build-system]
+requires = ["setuptools>=84.0.0", "setuptools_scm>=10.2.1"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "reuters-climate-paragraph"
-version = "0.1.0"
-description = "Deterministic newsroom paragraph generator for Reuters Climate Monitor data"
+dynamic = ["version"]
 requires-python = ">=3.11"
 dependencies = [
-  "click==8.3.1",
-  "mapbox-vector-tile==2.2.0",
-  "pmtiles==3.8.1",
+    "click==8.3.1",
+    "mapbox-vector-tile==2.2.0",
+    "pmtiles==3.8.1",
 ]
+authors = [{ name = "Palewire" }]
+description = "Deterministic newsroom paragraph generator for Reuters Climate Monitor data"
+keywords = ["climate", "journalism", "reuters", "claude", "skill"]
+license = "MIT"
+license-files = ["LICENSE"]
+readme = "README.md"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+
+[project.urls]
+Documentation = "https://github.com/palewire/reuters-climate-monitor-skill#readme"
+Source = "https://github.com/palewire/reuters-climate-monitor-skill"
+Issues = "https://github.com/palewire/reuters-climate-monitor-skill/issues"
 
 [project.scripts]
 climate-monitor = "reuters_climate_paragraph.cli:cli"
 
-[build-system]
-requires = ["hatchling==1.27.0"]
-build-backend = "hatchling.build"
-
 [dependency-groups]
 dev = [
-  "hatchling==1.27.0",
-  "pytest==8.4.2",
-  "ruff==0.13.1",
-  "ty==0.0.1a21",
+    "check-manifest",
+    "check-wheel-contents",
+    "deptry",
+    "pre-commit",
+    "setuptools-scm",
+    "twine",
+    "ty",
+    "vulture",
+    "zizmor",
+]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-timeout",
+    "pytest-xdist",
+]
+test-extras = [
+    "freezegun",
+    "hypothesis",
+    "pytest-env",
+    "pytest-ordering",
+    "pytest-rerunfailures",
+    "pytest-runner",
+    "pytest-sugar",
+    "pytest-vcr",
 ]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["src"]
+[tool.setuptools.package-dir]
+"" = "src"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/reuters_climate_paragraph"]
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
 
 [tool.ruff]
-line-length = 88
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+select = [
+    "E",
+    "F",
+    "B",
+    "C4",
+    "DTZ",
+    "G",
+    "LOG",
+    "W",
+    "I",
+    "UP",
+    "N",
+    "ANN",
+    "YTT",
+    "S",
+    "BLE",
+    "FA",
+    "ICN",
+    "PIE",
+    "Q",
+    "RSE",
+    "RET",
+    "SLOT",
+    "SIM",
+    "TID",
+    "PTH",
+    "PT",
+    "TC",
+    "FLY",
+    "PERF",
+    "RUF",
+]
+ignore = [
+    "E501",
+    "S101",
+    "SIM103",
+    "SIM108",
+    "SIM117",
+    "PERF401",
+    "RUF001",
+    "RUF005",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "ANN",
+    "S105",
+    "S108",
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.pytest.ini_options]
+addopts = [
+    "--strict-config",
+    "--strict-markers",
+    "--durations=10",
+    "--durations-min=1.0",
+]
+testpaths = ["tests"]
+python_files = "test_*.py"
+timeout = 60
+xfail_strict = true
+markers = [
+    "unit: Unit tests",
+    "component: Component tests",
+    "integration: Integration tests",
+    "e2e: End-to-end tests",
+]
+
+[tool.coverage.run]
+source = ["reuters_climate_paragraph"]
+branch = true
+relative_files = true
+omit = ["*/__pycache__/*"]
 
 [tool.ty.environment]
 python-version = "3.11"
+
+[tool.ty.src]
+include = ["src/reuters_climate_paragraph"]
+exclude = [
+    "tests/**",
+    "build/**",
+    ".venv/**",
+    ".github/**",
+    "**/__pycache__",
+]
+
+[tool.ty.rules]
+invalid-argument-type = "error"
+invalid-return-type = "error"
+invalid-key = "error"
+invalid-assignment = "error"
+unresolved-attribute = "error"
+possibly-unresolved-reference = "warn"
+unused-ignore-comment = "error"

@@ -12,9 +12,13 @@ from reuters_climate_paragraph.cli import (
     CDN_ROOT,
     ClimateMonitorClient,
     ClimateMonitorError,
+    Observation,
     choose_feature,
+    format_observation,
     run_generation,
     snap_to_grid,
+    validate_coordinates,
+    validate_region_request,
 )
 
 
@@ -183,3 +187,44 @@ def test_grid_rounding_matches_frontend_boundary_behavior() -> None:
     """Grid snapping follows the frontend's quarter-degree rule."""
     assert snap_to_grid(48.8566) == 48.75
     assert snap_to_grid(-118.7) == -118.75
+
+
+def test_invalid_requests_are_rejected() -> None:
+    """Generation rejects incomplete and malformed request arguments."""
+    client = ClimateMonitorClient(json_fetcher=lambda _: [])
+
+    with pytest.raises(ClimateMonitorError, match="Date must use"):
+        run_generation(client, "global", "not-a-date", "celsius")
+    with pytest.raises(ClimateMonitorError, match="Region requests need"):
+        run_generation(client, "region", "2026-09-22", "celsius")
+    with pytest.raises(ClimateMonitorError, match="Location requests need"):
+        run_generation(client, "location", "2026-09-22", "celsius")
+    with pytest.raises(ClimateMonitorError, match="Scope must be"):
+        run_generation(client, "other", "2026-09-22", "celsius")
+
+
+def test_invalid_values_and_geographies_are_rejected() -> None:
+    """Formatting and geography validation reject unsupported values."""
+    observation = Observation(
+        scope="global",
+        label="the globe",
+        date="2026-09-22",
+        daily_high_c=20,
+        normal_high_c=18,
+        anomaly_c=2,
+        source_urls=(),
+        site_url="https://example.test",
+    )
+
+    with pytest.raises(ClimateMonitorError, match="Unit must be"):
+        format_observation(observation, "kelvin")
+    with pytest.raises(ClimateMonitorError, match="Latitude"):
+        validate_coordinates(91, 0)
+    with pytest.raises(ClimateMonitorError, match="Longitude"):
+        validate_coordinates(0, 181)
+    with pytest.raises(ClimateMonitorError, match="Unknown region set"):
+        validate_region_request("unknown", "Europe")
+    with pytest.raises(ClimateMonitorError, match="must not be empty"):
+        validate_region_request("continent", "")
+    with pytest.raises(ClimateMonitorError, match="Unknown continent"):
+        validate_region_request("continent", "Atlantis")

@@ -9,7 +9,7 @@ from collections.abc import Callable
 from typing import Any, cast
 
 from .errors import ClimateMonitorError
-from .requests import GenerationRequest
+from .requests import REGION_SETS, GenerationRequest
 from .urls import DEFAULT_URL_BUILDER, ReutersUrlBuilder
 
 JsonFetcher = Callable[[str], object]
@@ -73,9 +73,65 @@ class MonitorFeedClient:
         GenerationRequest.validate_region_request(region_set, region)
         url = self._url_builder.region_feed_url(region_set)
         rows = self.as_rows(self._json_fetcher(url), url)
-        key = "continent" if region_set == "continent" else "region"
+        key = self._label_key(region_set)
         matching = [row for row in rows if row.get(key) == region]
         return self.select_exact_row(matching, day, region), url
+
+    def region_labels(self, region_set: str) -> list[str]:
+        """List labels currently published in one region-set feed.
+
+        Args:
+            region_set: Published region-set slug.
+
+        Returns:
+            Sorted, unique labels from the latest daily-averages feed.
+
+        Raises:
+            ClimateMonitorError: If the region set or feed is unusable.
+        """
+        GenerationRequest.validate_region_set(region_set)
+        url = self._url_builder.region_feed_url(region_set)
+        rows = self.as_rows(self._json_fetcher(url), url)
+        key = self._label_key(region_set)
+        labels = {
+            value.strip()
+            for row in rows
+            for value in [row.get(key)]
+            if isinstance(value, str) and value.strip()
+        }
+        if not labels:
+            raise ClimateMonitorError(f"Reuters feed {url} has no region labels")
+        return sorted(labels)
+
+    def all_region_labels(self) -> dict[str, list[str]]:
+        """List labels currently published across every region set.
+
+        Returns:
+            Region-set slugs mapped to sorted, unique published labels.
+
+        Raises:
+            ClimateMonitorError: If any region-set feed is unusable.
+        """
+        return {
+            region_set: self.region_labels(region_set)
+            for region_set in sorted(REGION_SETS)
+        }
+
+    @staticmethod
+    def _label_key(region_set: str) -> str:
+        """Return the geography field used by a region-set feed.
+
+        Args:
+            region_set: Published region-set slug.
+
+        Returns:
+            The JSON field containing the display label.
+        """
+        if region_set == "continent":
+            return "continent"
+        if region_set == "country":
+            return "country"
+        return "region"
 
     @staticmethod
     def fetch_json(url: str) -> object:

@@ -3,15 +3,19 @@
 from __future__ import annotations
 
 import gzip
+import json
 from datetime import date
 from typing import Any
 
 import mapbox_vector_tile
 import pytest
+from click.testing import CliRunner
 
+import reuters_climate_paragraph.cli as cli_module
 from reuters_climate_paragraph.cli import run_generation
 from reuters_climate_paragraph.client import ClimateMonitorClient
 from reuters_climate_paragraph.errors import ClimateMonitorError
+from reuters_climate_paragraph.feeds import MonitorFeedClient
 from reuters_climate_paragraph.geocoder import NominatimGeocoder, validate_coordinates
 from reuters_climate_paragraph.map_data import (
     PointDataReader,
@@ -117,6 +121,44 @@ def test_region_generation_filters_the_requested_region() -> None:
         "20 degrees Celsius (68 degrees Fahrenheit), which is 3.5 C (6.3 F) above"
         in payload["paragraph"]
     )
+
+
+def test_country_feed_uses_country_labels() -> None:
+    """Country feed rows use the country field for region selection."""
+    client = MonitorFeedClient(
+        json_fetcher=lambda _: [
+            feed_row("2026-09-22", country="France"),
+            feed_row("2026-09-22", country="Germany"),
+        ]
+    )
+
+    row, _ = client.region_row("country", "France", "2026-09-22")
+
+    assert row["country"] == "France"
+    assert client.region_labels("country") == ["France", "Germany"]
+
+
+def test_regions_command_lists_published_labels(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The regions command prints the current region-set and label map."""
+
+    class FakeFeedClient:
+        def all_region_labels(self) -> dict[str, list[str]]:
+            return {
+                "continent": ["Africa", "Europe"],
+                "country": ["France", "Germany"],
+            }
+
+    monkeypatch.setattr(cli_module, "_MonitorFeedClient", FakeFeedClient)
+
+    result = CliRunner().invoke(cli_module.cli, ["regions"])
+
+    assert result.exit_code == 0
+    assert json.loads(result.output) == {
+        "continent": ["Africa", "Europe"],
+        "country": ["France", "Germany"],
+    }
 
 
 def test_formatting_uses_weekday_today_and_whole_degree_absolute_values() -> None:

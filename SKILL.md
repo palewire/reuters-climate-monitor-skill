@@ -26,6 +26,15 @@ answer, a cached value, a screenshot, or a legacy feed.
    - `location` for a named place. The sidecar uses the cached OpenStreetMap
      Nominatim service by default. Explicit user-provided coordinates may be
      passed instead; never guess coordinates.
+   - To show the current full list of supported region sets and labels, run:
+
+     ```bash
+     uv run reuters-climate-paragraph regions
+     ```
+
+     Add `--region-set continent` (or another published set) to inspect one
+     set. Use this command when a user asks which regions are supported or
+     gives an ambiguous regional name.
 2. Resolve the requested date as an explicit UTC date. Use the current UTC date
    when the user asks for today's reading. Current and future point requests
    use the published HRES map. Past point requests use the published ERA5

@@ -49,6 +49,22 @@ and returns only the ready-to-use paragraph.
 The skill requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). From the
 skill directory:
 
+To list every region set and label currently published by the Monitor:
+
+```bash
+uv run reuters-climate-paragraph regions
+```
+
+To list labels from one region set:
+
+```bash
+uv run reuters-climate-paragraph regions \
+  --region-set continent
+```
+
+These commands return JSON and read the current public feeds, so they are the
+best source when a user asks which regions are supported.
+
 ```bash
 uv run reuters-climate-paragraph generate \
   --scope global \

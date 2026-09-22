@@ -64,14 +64,26 @@ class GenerationRequest:
         Raises:
             ClimateMonitorError: If the request is unsupported.
         """
-        if region_set not in REGION_SETS:
-            raise ClimateMonitorError(
-                f"Unknown region set {region_set!r}; choose from {sorted(REGION_SETS)}"
-            )
+        GenerationRequest.validate_region_set(region_set)
         if not region.strip():
             raise ClimateMonitorError("Region must not be empty")
         if region_set == "continent" and region not in CONTINENT_LABELS:
             raise ClimateMonitorError(f"Unknown continent {region!r}")
+
+    @staticmethod
+    def validate_region_set(region_set: str) -> None:
+        """Reject an unsupported published region-set slug.
+
+        Args:
+            region_set: Published region-set slug.
+
+        Raises:
+            ClimateMonitorError: If the region set is unsupported.
+        """
+        if region_set not in REGION_SETS:
+            raise ClimateMonitorError(
+                f"Unknown region set {region_set!r}; choose from {sorted(REGION_SETS)}"
+            )
 
 
 @dataclass(frozen=True)

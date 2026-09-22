@@ -9,22 +9,24 @@ from typing import Any
 import mapbox_vector_tile
 import pytest
 
-from reuters_climate_paragraph.cli import (
+from reuters_climate_paragraph.cli import run_generation
+from reuters_climate_paragraph.client import ClimateMonitorClient
+from reuters_climate_paragraph.errors import ClimateMonitorError
+from reuters_climate_paragraph.geocoder import NominatimGeocoder, validate_coordinates
+from reuters_climate_paragraph.map_data import (
+    PointDataReader,
+    choose_feature,
+    snap_to_grid,
+)
+from reuters_climate_paragraph.models import Observation
+from reuters_climate_paragraph.rendering import format_observation
+from reuters_climate_paragraph.requests import validate_region_request
+from reuters_climate_paragraph.urls import (
     ERA5_MAP_ROOT,
     HRES_MAP_ROOT,
     SITE_ROOT,
-    ClimateMonitorClient,
-    ClimateMonitorError,
-    Observation,
     anomaly_map_url,
-    choose_feature,
-    format_observation,
-    run_generation,
-    snap_to_grid,
-    validate_coordinates,
-    validate_region_request,
 )
-from reuters_climate_paragraph.geocoder import NominatimGeocoder
 
 
 def feed_row(day: str, **extra: Any) -> dict[str, Any]:
@@ -240,21 +242,18 @@ def test_location_land_fallback_and_verification_url() -> None:
             return feature_tile
 
     client = ClimateMonitorClient(
-        range_source_factory=lambda _: lambda _offset, _length: b"",
+        point_reader=PointDataReader(
+            range_source_factory=lambda _: lambda _offset, _length: b"",
+            reader_factory=FakeReader,
+        ),
         geocoder=lambda _label: (0, 0),
     )
-    original_reader = __import__("reuters_climate_paragraph.cli", fromlist=["Reader"])
-    monkeypatch = pytest.MonkeyPatch()
-    monkeypatch.setattr(original_reader, "Reader", FakeReader)
-    try:
-        payload = run_generation(
-            client,
-            "location",
-            "2026-09-22",
-            label="Test Coast",
-        )
-    finally:
-        monkeypatch.undo()
+    payload = run_generation(
+        client,
+        "location",
+        "2026-09-22",
+        label="Test Coast",
+    )
 
     assert payload["land_swapped"] is True
     assert payload["coordinates"] is not None

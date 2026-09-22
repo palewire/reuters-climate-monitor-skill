@@ -42,7 +42,7 @@ class NominatimGeocoder:
         fetcher: NominatimFetcher | None = None,
     ) -> None:
         self._cache_path = cache_path or self.default_cache_path()
-        self._fetcher = fetcher or fetch_nominatim_json
+        self._fetcher = fetcher or self.fetch_nominatim_json
 
     def __call__(self, label: str) -> tuple[float, float]:
         """Resolve a place name when the geocoder is used as a callable.
@@ -133,8 +133,56 @@ class NominatimGeocoder:
                 f"Nominatim returned no valid coordinates for {query!r}"
             ) from error
 
-        validate_coordinates(lat, lng)
+        NominatimGeocoder.validate_coordinates(lat, lng)
         return lat, lng
+
+    @staticmethod
+    def fetch_nominatim_json(url: str) -> object:
+        """Fetch and decode a Nominatim response.
+
+        Args:
+            url: Absolute Nominatim search URL.
+
+        Returns:
+            The decoded JSON response.
+
+        Raises:
+            ClimateMonitorError: If the request or response is unusable.
+        """
+        request = urllib.request.Request(  # noqa: S310 - Nominatim HTTPS URL.
+            url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": NOMINATIM_USER_AGENT,
+            },
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
+                return json.load(response)
+        except (OSError, urllib.error.URLError, json.JSONDecodeError) as error:
+            raise ClimateMonitorError(
+                f"Could not read Nominatim response for {url}: {error}"
+            ) from error
+
+    @staticmethod
+    def validate_coordinates(lat: float, lng: float) -> None:
+        """Validate decimal-degree coordinates.
+
+        Args:
+            lat: Latitude in decimal degrees.
+            lng: Longitude in decimal degrees.
+
+        Returns:
+            None.
+
+        Raises:
+            ClimateMonitorError: If either coordinate is out of range or
+                non-finite.
+        """
+        if not math.isfinite(lat) or not -90 <= lat <= 90:
+            raise ClimateMonitorError("Latitude must be between -90 and 90")
+        if not math.isfinite(lng) or not -180 <= lng <= 180:
+            raise ClimateMonitorError("Longitude must be between -180 and 180")
 
     def _read_cache(self) -> dict[str, dict[str, float]]:
         """Read this geocoder's cached coordinates.
@@ -197,20 +245,7 @@ def fetch_nominatim_json(url: str) -> object:
     Example:
         ``raw = fetch_nominatim_json("https://example.test/search")``
     """
-    request = urllib.request.Request(  # noqa: S310 - Nominatim HTTPS URL.
-        url,
-        headers={
-            "Accept": "application/json",
-            "User-Agent": NOMINATIM_USER_AGENT,
-        },
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
-            return json.load(response)
-    except (OSError, urllib.error.URLError, json.JSONDecodeError) as error:
-        raise ClimateMonitorError(
-            f"Could not read Nominatim response for {url}: {error}"
-        ) from error
+    return NominatimGeocoder.fetch_nominatim_json(url)
 
 
 def validate_coordinates(lat: float, lng: float) -> None:
@@ -226,7 +261,19 @@ def validate_coordinates(lat: float, lng: float) -> None:
     Raises:
         ClimateMonitorError: If either coordinate is out of range or non-finite.
     """
-    if not math.isfinite(lat) or not -90 <= lat <= 90:
-        raise ClimateMonitorError("Latitude must be between -90 and 90")
-    if not math.isfinite(lng) or not -180 <= lng <= 180:
-        raise ClimateMonitorError("Longitude must be between -180 and 180")
+    NominatimGeocoder.validate_coordinates(lat, lng)
+
+
+def geocode_place(label: str) -> tuple[float, float]:
+    """Resolve a place name with the default Nominatim geocoder.
+
+    Args:
+        label: Place name or unambiguous place query.
+
+    Returns:
+        A latitude and longitude in decimal degrees.
+
+    Raises:
+        ClimateMonitorError: If the lookup, response, or cache is unusable.
+    """
+    return NominatimGeocoder()(label)

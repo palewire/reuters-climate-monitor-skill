@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Publish the Python sidecar and CLI as a standard PyPI package alongside the
   portable Claude Desktop Skill archive.
+- Attach the portable `.skill` archive to the GitHub Release created for each
+  tagged package release.
 - Add a `regions` command that lists the region sets and labels currently
   published by the Reuters Climate Monitor.
 

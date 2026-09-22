@@ -13,6 +13,7 @@ README_PATH = ROOT / "README.md"
 PYPROJECT_PATH = ROOT / "pyproject.toml"
 EVAL_CASES_PATH = ROOT / "tests" / "fixtures" / "skill_eval_cases.json"
 PACKAGE_SCRIPT_PATH = ROOT / "scripts" / "package_skill.py"
+RELEASE_WORKFLOW_PATH = ROOT / ".github" / "workflows" / "continuous-deployment.yaml"
 
 
 def read_skill_parts() -> tuple[str, str]:
@@ -81,6 +82,16 @@ def test_skill_package_script_includes_runtime_files() -> None:
 
     for required_path in ("SKILL.md", "pyproject.toml", "uv.lock", '"src"'):
         assert required_path in package_script
+
+
+def test_release_workflow_publishes_skill_archive() -> None:
+    """Tagged releases attach the Claude Skill archive to GitHub Releases."""
+    workflow = RELEASE_WORKFLOW_PATH.read_text()
+
+    assert "make build skill-package" in workflow
+    assert "contents: write" in workflow
+    assert "gh release create" in workflow
+    assert "dist/reuters-climate-paragraph.skill" in workflow
 
 
 def test_skill_review_fixture_covers_required_request_types() -> None:

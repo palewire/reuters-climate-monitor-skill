@@ -260,13 +260,16 @@ Build the portable Skill archive with:
 make skill-package
 ```
 
-This creates `dist/reuters-climate-paragraph-skill.zip`. The archive contains
+This creates `dist/reuters-climate-paragraph.skill`. The archive contains
 the root `SKILL.md`, the locked Python project, and the `src/` sidecar needed
 for runtime lookups. Install or distribute the unzipped
 `reuters-climate-paragraph/` folder using the newsroom's Claude Desktop Skill
 deployment process. The Python wheel and source distribution created by
 `make build` are separate developer artifacts and are not substitutes for the
 Skill archive because they do not provide the root `SKILL.md`.
+
+Tagged releases publish this same `.skill` archive as an asset on the GitHub
+Release page alongside the PyPI package.
 
 Location names are geocoded with the cached OpenStreetMap Nominatim service by
 default. Pass `--lat` and `--lng` together to use coordinates supplied by the

@@ -17,15 +17,16 @@ Git tags through `setuptools-scm`; do not edit a version file.
 - [ ] Merge the approved release PR.
 - [ ] With explicit human approval, create or confirm the exact version tag on
       the release PR's merge commit to trigger package publication.
-- [ ] Confirm the release workflow published the expected package to PyPI.
-- [ ] Complete the post-merge GitHub Release follow-up below.
+- [ ] Confirm the release workflow published the expected package to PyPI and
+      created the GitHub Release with the `.skill` archive attached.
 
-## Post-merge GitHub Release Follow-up
+## GitHub Release verification
 
-Do not create the GitHub Release until the release PR has merged, the exact
-version tag exists, and the approved package publication has completed. The tag
-must point to the expected merge commit. Creating a tag, publishing a package,
-or creating a release still requires explicit human approval.
+The release workflow creates the GitHub Release after the PyPI publication
+completes. It uses the existing tag, generates release notes, and attaches
+`reuters-climate-paragraph.skill`. The tag must point to the expected merge
+commit, and creating a tag or publishing a package still requires explicit
+human approval.
 
 1. Record the release PR's merge commit and confirm the exact tag resolves to
    it:
@@ -37,19 +38,19 @@ or creating a release still requires explicit human approval.
    test "$(git rev-parse "${VERSION}^{commit}")" = "$EXPECTED_COMMIT"
    ```
 
-2. Prepare concise release notes from the matching version section in
-   `CHANGELOG.md`. After the package publication succeeds and with explicit
-   human approval, create the GitHub Release from the existing tag:
+2. After the package publication succeeds, verify the GitHub Release and its
+   Skill asset:
 
    ```sh
-   gh release create "$VERSION" \
-     --verify-tag \
-     --title "$VERSION" \
-     --notes-file /path/to/release-notes.md
+   gh release view "$VERSION" \
+     --json tagName,isDraft,isPrerelease,assets \
+     --jq '{
+       tag: .tagName,
+       draft: .isDraft,
+       prerelease: .isPrerelease,
+       skill: ([.assets[].name] | index("reuters-climate-paragraph.skill"))
+     }'
    ```
-
-   The GitHub UI may be used instead, but select the existing tag and publish
-   the release rather than creating a draft or prerelease.
 
 3. Verify that the public release uses the expected tag and commit:
 

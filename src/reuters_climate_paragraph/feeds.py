@@ -182,7 +182,11 @@ class MonitorFeedClient:
                 f"Could not read Reuters feed {url}: {error}"
             ) from error
         except json.JSONDecodeError as error:
-            LOGGER.debug("GET JSON feed returned invalid JSON url=%s", safe_url(url), exc_info=True)
+            LOGGER.debug(
+                "GET JSON feed returned invalid JSON url=%s",
+                safe_url(url),
+                exc_info=True,
+            )
             raise ClimateMonitorError(
                 f"Could not decode Reuters feed {url}: {error}"
             ) from error

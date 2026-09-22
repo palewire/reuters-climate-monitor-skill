@@ -49,9 +49,7 @@ def configure_logging(verbose: bool) -> None:
         handler.close()
     logger.handlers.clear()
     handler = logging.StreamHandler(sys.stderr)
-    handler.setFormatter(
-        logging.Formatter("%(levelname)s %(name)s: %(message)s")
-    )
+    handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
     logger.addHandler(handler)
     logger.setLevel(logging.DEBUG if verbose else logging.CRITICAL)
     logger.propagate = False

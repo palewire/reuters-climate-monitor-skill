@@ -125,6 +125,12 @@ paragraph into a stronger claim. In particular:
   editor inspect the map; the CDN link lets an editor inspect the source feed
   or PMTiles object directly.
 
+## Reuters style
+
+### Temperature references
+
+> Spell out *Celsius* or *Fahrenheit* on first reference with the word degrees. Do not use centigrade. Use figures except for zero and abbreviate to C and F on second reference. Write *86 degrees Fahrenheit (30 degrees Celsius)* on first reference and *86 F (30 C)* on second reference with a space between the numbers and letter. Spell out minus for clarity, as in *minus 10 C,* not -10 C. Note that temperatures are not hot or cold but high or low.
+
 ## Development and tests
 
 From this skill directory:

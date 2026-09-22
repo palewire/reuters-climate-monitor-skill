@@ -547,6 +547,41 @@ def choose_feature(
     }
 
 
+def format_absolute_temperature(value: float, unit_name: str) -> str:
+    """Format an absolute temperature using Reuters style.
+
+    Args:
+        value: Absolute temperature in the selected display unit.
+        unit_name: Full unit name, either ``Celsius`` or ``Fahrenheit``.
+
+    Returns:
+        A whole-degree temperature with ``degrees`` and a clear minus sign.
+    """
+    rounded = round(value)
+    if rounded == 0:
+        number = "zero"
+    elif rounded < 0:
+        number = f"minus {abs(rounded)}"
+    else:
+        number = str(rounded)
+    return f"{number} degrees {unit_name}"
+
+
+def format_anomaly_temperature(value: float, unit_abbreviation: str) -> str:
+    """Format an anomaly using Reuters style.
+
+    Args:
+        value: Anomaly temperature in the selected display unit.
+        unit_abbreviation: Unit abbreviation, either ``C`` or ``F``.
+
+    Returns:
+        A one-decimal anomaly with a space before its unit abbreviation.
+    """
+    rounded = round(abs(value), 1)
+    number = "zero" if rounded == 0 else f"{rounded:.1f}"
+    return f"{number} {unit_abbreviation}"
+
+
 def format_observation(
     observation: Observation,
     unit: str,
@@ -570,7 +605,8 @@ def format_observation(
         raise ClimateMonitorError("Unit must be celsius or fahrenheit")
     factor = 1 if unit == "celsius" else 9 / 5
     offset = 0 if unit == "celsius" else 32
-    suffix = "°C" if unit == "celsius" else "°F"
+    unit_name = "Celsius" if unit == "celsius" else "Fahrenheit"
+    unit_abbreviation = "C" if unit == "celsius" else "F"
     daily = observation.daily_high_c * factor + offset
     normal = observation.normal_high_c * factor + offset
     anomaly = observation.anomaly_c * factor
@@ -589,8 +625,10 @@ def format_observation(
     else:
         subject = f"the high in the nearest monitor grid cell to {observation.label}"
     paragraph = (
-        f"On {date_label}, {subject} is forecast to reach {daily:.0f}{suffix}, "
-        f"{abs(anomaly):.1f}{suffix} {direction} the 1961–1990 average, "
+        f"On {date_label}, {subject} is forecast to reach "
+        f"{format_absolute_temperature(daily, unit_name)}, "
+        f"{format_anomaly_temperature(anomaly, unit_abbreviation)} {direction} "
+        "the 1961–1990 average, "
         f"according to the [Reuters Climate Monitor]({SITE_ROOT})."
     )
     return {

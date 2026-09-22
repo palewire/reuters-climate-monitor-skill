@@ -56,7 +56,7 @@ def test_today_global_region_and_location_are_published() -> None:
         formatted = format_observation(observation, "celsius")
         assert isinstance(formatted["daily_high"], int)
         assert f"({SITE_ROOT})" in formatted["paragraph"]
-        assert f"{abs(observation.anomaly_c):.1f}°C" in formatted["paragraph"]
+        assert f"{abs(observation.anomaly_c):.1f} C" in formatted["paragraph"]
         assert formatted["paragraph"]
 
     assert global_observation.source_urls == (

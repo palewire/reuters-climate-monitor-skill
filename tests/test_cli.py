@@ -69,8 +69,8 @@ def test_global_generation_uses_exact_date_and_published_delta() -> None:
     assert payload["daily_high_c"] == 20.04
     assert payload["anomaly_c"] == 1.234
     assert payload["paragraph"] == (
-        "On Tuesday, the global average high is forecast to reach 20°C, "
-        "1.2°C above the 1961–1990 average, according to the [Reuters Climate "
+        "On Tuesday, the global average high is forecast to reach 20 degrees "
+        "Celsius, 1.2 C above the 1961–1990 average, according to the [Reuters Climate "
         f"Monitor]({SITE_ROOT})."
     )
     assert payload["source_urls"] == [url]
@@ -95,7 +95,7 @@ def test_region_generation_filters_the_requested_region() -> None:
     )
 
     assert payload["anomaly"] == 6.3
-    assert "6.3°F above" in payload["paragraph"]
+    assert "6.3 F above" in payload["paragraph"]
 
 
 def test_formatting_uses_weekday_today_and_whole_degree_absolute_values() -> None:
@@ -126,8 +126,40 @@ def test_formatting_uses_weekday_today_and_whole_degree_absolute_values() -> Non
     assert today_output["normal_high"] == 64
     assert today_output["anomaly"] == 3.6
     assert "On Tuesday," in today_output["paragraph"]
-    assert "reach 68°F, 3.6°F above" in today_output["paragraph"]
+    assert "reach 68 degrees Fahrenheit, 3.6 F above" in today_output["paragraph"]
     assert "On September 22, 2026," in historical_output["paragraph"]
+
+
+def test_formatting_spells_out_zero_and_minus() -> None:
+    """Absolute temperatures use zero and minus instead of symbols."""
+    observation = Observation(
+        scope="global",
+        label="the globe",
+        date="2026-09-22",
+        daily_high_c=-10.4,
+        normal_high_c=-8.2,
+        anomaly_c=-2,
+        source_urls=(),
+        site_url=SITE_ROOT,
+    )
+
+    output = format_observation(observation, "celsius", today=date(2026, 9, 22))
+
+    assert "reach minus 10 degrees Celsius, 2.0 C below" in output["paragraph"]
+
+    observation = Observation(
+        scope="global",
+        label="the globe",
+        date="2026-09-22",
+        daily_high_c=0.2,
+        normal_high_c=0.1,
+        anomaly_c=0,
+        source_urls=(),
+        site_url=SITE_ROOT,
+    )
+    output = format_observation(observation, "celsius", today=date(2026, 9, 22))
+
+    assert "reach zero degrees Celsius, zero C at" in output["paragraph"]
 
 
 def test_missing_date_is_an_error_instead_of_a_silent_fallback() -> None:

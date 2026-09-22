@@ -29,8 +29,10 @@ answer, a cached value, a screenshot, or a legacy feed.
    - `location` for a named place. The sidecar uses the cached OpenStreetMap
      Nominatim service by default. Explicit user-provided coordinates may be
      passed instead; never guess coordinates.
-2. Resolve the date as the current UTC date. Pass it explicitly to the
-   sidecar; this makes the result reproducible.
+2. Resolve the requested date as an explicit UTC date. Use the current UTC date
+   when the user asks for today's reading. For a published past date, the
+   sidecar uses the available historical ERA5 reading and writes the paragraph
+   in the past tense.
 3. Use the fixed Celsius-first, Fahrenheit-in-parentheses presentation. Do not
    ask the user to choose a unit.
 4. Run the sidecar from this skill directory:
@@ -126,8 +128,10 @@ paragraph into a stronger claim. In particular:
 
 - “above” and “below” describe the published daily-high anomaly against the
   1961–1990 reference period.
-- The daily high and anomaly are forecast/model values for the current monitor
-  day; do not call them a weather-station observation.
+- The daily high and anomaly for the current monitor day are forecast/model
+  values; do not call them a weather-station observation.
+- For a published past date, the sidecar uses the available ERA5 reading and
+  says that the high “reached” the value instead of calling it a forecast.
 - A point result represents the requested place's nearest 0.25-degree grid
   cell, not an entire city or administrative area. The paragraph may simply
   say “the high in [place]”; keep the resolved coordinates in the verification

@@ -96,6 +96,11 @@ def test_pinned_historical_location_has_stable_published_values() -> None:
     assert observation.source_urls == (
         f"{MAP_ROOT}/{PINNED_DATE}/t2m_max_delta_data.pmtiles",
     )
+    formatted = format_observation(observation, "celsius")
+    assert (
+        "reached 27 degrees Celsius (81 degrees Fahrenheit)" in formatted["paragraph"]
+    )
+    assert "is forecast to reach" not in formatted["paragraph"]
 
 
 @pytest.mark.integration

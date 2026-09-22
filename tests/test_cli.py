@@ -138,6 +138,11 @@ def test_formatting_uses_weekday_today_and_whole_degree_absolute_values() -> Non
         in today_output["paragraph"]
     )
     assert "On September 22, 2026," in historical_output["paragraph"]
+    assert (
+        "reached 20 degrees Celsius (68 degrees Fahrenheit)"
+        in historical_output["paragraph"]
+    )
+    assert "is forecast to reach" not in historical_output["paragraph"]
 
 
 def test_formatting_spells_out_zero_and_minus() -> None:

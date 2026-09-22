@@ -813,6 +813,7 @@ def format_observation(
         if parsed_date == current_date
         else f"{parsed_date.strftime('%B')} {parsed_date.day}, {parsed_date.year}"
     )
+    reading_verb = "reached" if parsed_date < current_date else "is forecast to reach"
     if observation.scope == "global":
         subject = "the global average high"
     elif observation.scope == "region":
@@ -820,7 +821,7 @@ def format_observation(
     else:
         subject = f"the high in {observation.label}"
     paragraph = (
-        f"On {date_label}, {subject} is forecast to reach "
+        f"On {date_label}, {subject} {reading_verb} "
         f"{format_temperature_pair(observation.daily_high_c)}, which is "
         f"{format_temperature_pair(observation.anomaly_c, anomaly=True)} {direction} "
         "the 1961–1990 average, "

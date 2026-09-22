@@ -646,7 +646,7 @@ def format_observation(
     elif observation.scope == "region":
         subject = f"the average high in {observation.label}"
     else:
-        subject = f"the high in the nearest monitor grid cell to {observation.label}"
+        subject = f"the high in {observation.label}"
     paragraph = (
         f"On {date_label}, {subject} is forecast to reach "
         f"{format_temperature_pair(observation.daily_high_c)}, "

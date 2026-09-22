@@ -116,9 +116,10 @@ paragraph into a stronger claim. In particular:
   1961–1990 reference period.
 - The daily high and anomaly are forecast/model values for the current monitor
   day; do not call them a weather-station observation.
-- A point result represents the nearest 0.25-degree grid cell, not an entire
-  city or administrative area. Keep that qualification when describing a
-  location.
+- A point result represents the requested place's nearest 0.25-degree grid
+  cell, not an entire city or administrative area. The paragraph may simply
+  say “the high in [place]”; keep the resolved coordinates in the verification
+  note.
 - Preserve the paragraph's Markdown link on the Reuters Climate Monitor
   homepage.
 - Keep the verification links with the draft. The Reuters page link lets an

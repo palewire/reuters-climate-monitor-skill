@@ -11,10 +11,28 @@ The sidecar must remain source-first:
 - use the published `t2m_max_delta` field;
 - do not calculate new climate analysis;
 - preserve the fixed output policy in `SKILL.md`; and
-- keep direct Reuters verification URLs in every result.
+- keep the Reuters page verification URL in every result.
 
 Reuters data, trademarks, editorial copy, and visual design are not licensed
 by this repository's MIT license.
+
+## Data behavior
+
+- Current and future point dates use the published HRES data tiles.
+- Past point dates use the published ERA5 anomaly-map tiles and must use
+  past-tense wording.
+- Point paragraphs read the published daily high, normal, and anomaly fields
+  directly. Do not infer one field from the others.
+- JSON summary values are rounded Celsius values; the paragraph adds the
+  Fahrenheit equivalents in parentheses. There is no unit-selection option.
+- ERA5 point tiles do not reliably include the overview and baseline arrays
+  available in HRES tiles.
+- Global and regional paragraphs must refuse dates whose published aggregate
+  feed does not contain the required normal and anomaly fields. Never fill
+  those fields with client-side calculations, substitutions, or custom
+  analysis.
+- Location names use cached Nominatim lookups; paired latitude and longitude
+  arguments bypass geocoding.
 
 ## Layout
 
@@ -28,6 +46,10 @@ by this repository's MIT license.
 
 Use the template-based workflow:
 
+```bash
+make bootstrap
+make check
+make verify
 ```
 
 Run the Skill-specific contract and entrypoint checks with:
@@ -42,11 +64,7 @@ Build the distributable Claude Skill archive with:
 make skill-package
 ```
 
-The human-review prompt set lives in `tests/fixtures/skill_eval_cases.json`.bash
-make bootstrap
-make check
-make verify
-```
+The human-review prompt set lives in `tests/fixtures/skill_eval_cases.json`.
 
 `make check` runs diff, Ruff, formatting, ty, dependency, and workflow checks.
 `make verify-fast` runs those checks, offline tests, package-manifest checks,

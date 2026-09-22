@@ -10,7 +10,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import Callable, Iterable
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, cast
@@ -125,26 +125,27 @@ class Observation:
     land_swapped: bool = False
     geocoder_url: str | None = None
 
-    def to_payload(
-        self, unit: str = "celsius", *, today: date | None = None
-    ) -> dict[str, Any]:
+    def to_payload(self, *, today: date | None = None) -> dict[str, Any]:
         """Return the reading, paragraph, and verification URLs as JSON data.
 
         Args:
-            unit: Output unit, either ``celsius`` or ``fahrenheit``.
             today: Optional UTC date used when rendering today's date in tests.
 
         Returns:
             A JSON-serializable dictionary with source values and copy.
-
-        Example:
-            ``payload = observation.to_payload("fahrenheit")``
         """
-        output = format_observation(self, unit, today=today)
+        output = format_observation(self, today=today)
         return {
-            **asdict(self),
-            "source_urls": list(self.source_urls),
+            "scope": self.scope,
+            "label": self.label,
+            "date": self.date,
+            "daily_high_c": self.daily_high_c,
+            "normal_high_c": self.normal_high_c,
+            "anomaly_c": self.anomaly_c,
+            "site_url": self.site_url,
             "coordinates": list(self.coordinates) if self.coordinates else None,
+            "land_swapped": self.land_swapped,
+            "geocoder_url": self.geocoder_url,
             **output,
         }
 
@@ -728,9 +729,7 @@ def choose_feature(
         else:
             feature_lng = ((tile_x + coords[0] / extent) / 2**zoom) * 360 - 180
             n = math.pi - (2 * math.pi * (tile_y + coords[1] / extent)) / 2**zoom
-            feature_lat = math.degrees(
-                math.atan(0.5 * (math.exp(n) - math.exp(-n)))
-            )
+            feature_lat = math.degrees(math.atan(0.5 * (math.exp(n) - math.exp(-n))))
         distance = math.hypot(feature_lng - reference_lng, feature_lat - reference_lat)
         points.append(
             {
@@ -819,7 +818,6 @@ def format_temperature_pair(value_c: float, *, anomaly: bool = False) -> str:
 
 def format_observation(
     observation: Observation,
-    unit: str,
     *,
     today: date | None = None,
 ) -> dict[str, Any]:
@@ -827,22 +825,11 @@ def format_observation(
 
     Args:
         observation: Validated monitor observation.
-        unit: ``celsius`` or ``fahrenheit``.
         today: Optional UTC date used when rendering today's date in tests.
 
     Returns:
         A dictionary with display values, paragraph, and verification URL.
-
-    Raises:
-        ClimateMonitorError: If the requested unit is unsupported.
     """
-    if unit not in {"celsius", "fahrenheit"}:
-        raise ClimateMonitorError("Unit must be celsius or fahrenheit")
-    factor = 1 if unit == "celsius" else 9 / 5
-    offset = 0 if unit == "celsius" else 32
-    daily = observation.daily_high_c * factor + offset
-    normal = observation.normal_high_c * factor + offset
-    anomaly = observation.anomaly_c * factor
     direction = (
         "above"
         if observation.anomaly_c > 0
@@ -872,10 +859,9 @@ def format_observation(
         f"according to the [Reuters Climate Monitor]({SITE_ROOT})."
     )
     return {
-        "unit": unit,
-        "daily_high": round(daily),
-        "normal_high": round(normal),
-        "anomaly": round(anomaly, 1),
+        "daily_high": round(observation.daily_high_c),
+        "normal_high": round(observation.normal_high_c),
+        "anomaly": round(observation.anomaly_c, 1),
         "anomaly_direction": direction,
         "caution": CAUTION,
         "paragraph": paragraph,
@@ -917,7 +903,6 @@ def run_generation(
     client: ClimateMonitorClient,
     scope: str,
     day: str,
-    unit: str,
     *,
     region_set: str | None = None,
     region: str | None = None,
@@ -932,7 +917,6 @@ def run_generation(
         client: Climate Monitor client.
         scope: ``global``, ``region``, or ``location``.
         day: Exact UTC date.
-        unit: ``celsius`` or ``fahrenheit``.
         region_set: Region-set slug for a regional request.
         region: Display label for a regional request.
         label: Place label for a location request.
@@ -964,7 +948,7 @@ def run_generation(
         observation = client.location_observation(label, lat, lng, day)
     else:
         raise ClimateMonitorError("Scope must be global, region, or location")
-    return observation.to_payload(unit, today=today)
+    return observation.to_payload(today=today)
 
 
 @click.group()
@@ -979,12 +963,6 @@ def cli() -> None:
     required=True,
 )
 @click.option("--date", "day", required=True, help="UTC date in YYYY-MM-DD form.")
-@click.option(
-    "--unit",
-    type=click.Choice(["celsius", "fahrenheit"]),
-    default="celsius",
-    show_default=True,
-)
 @click.option("--region-set", default=None)
 @click.option("--region", default=None)
 @click.option("--label", default=None)
@@ -993,7 +971,6 @@ def cli() -> None:
 def generate(
     scope: str,
     day: str,
-    unit: str,
     region_set: str | None,
     region: str | None,
     label: str | None,
@@ -1006,7 +983,6 @@ def generate(
             ClimateMonitorClient(),
             scope,
             day,
-            unit,
             region_set=region_set,
             region=region,
             label=label,

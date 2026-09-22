@@ -10,6 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Remove the unnecessary unit option; output is always the fixed Celsius-first
+  format with Fahrenheit in parentheses.
+- Keep raw feed and tile URLs internal instead of returning them in JSON.
 - Format paragraph temperatures with Celsius first and the Fahrenheit
   equivalent in parentheses.
 - Route past point lookups to the published ERA5 anomaly map and keep current

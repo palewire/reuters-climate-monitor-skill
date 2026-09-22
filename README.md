@@ -1,29 +1,5 @@
-# Reuters Climate Paragraph Skill
-
-This repository is a portable Claude Skill for producing one fixed,
-publication-ready paragraph from a single published Reuters Climate Monitor
-reading. Copy the repository folder into the Claude Desktop skills directory
-or package it according to the newsroom's Claude deployment process.
-
-The Python sidecar reads the Reuters Climate Monitor CDN, selects the requested
-UTC date exactly, and emits JSON containing:
-
-- one published daily high, normal, and anomaly;
-- a fixed paragraph presenting those values;
-- Celsius-first temperature pairs with Fahrenheit in parentheses;
-- the Reuters page URL and direct CDN URL for verification; and
-- a publication caution and, for geocoded locations, a link to review the
-  resolved point; and
-- resolved grid coordinates for point lookups.
-
-The output does not produce rankings, multi-location averages, trends, records,
-causes, climate attribution, or recomputed anomalies. Reuters Climate Monitor
-data is used as published; the paragraph is only a fixed presentation layer.
-For a published past point date, the sidecar uses the published ERA5 anomaly
-map and uses past tense rather than describing the result as a forecast.
-Global and regional requests refuse dates where the daily averages feed does
-not publish the required anomaly fields rather than calculating or substituting
-values.
+A portable skill for AI assistants for producing a publication-ready paragraph
+from the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
 
 ## Use
 
@@ -33,8 +9,7 @@ skill directory:
 ```bash
 uv run reuters-climate-paragraph generate \
   --scope global \
-  --date YYYY-MM-DD \
-  --unit celsius
+  --date YYYY-MM-DD
 ```
 
 For a named region:
@@ -44,8 +19,7 @@ uv run reuters-climate-paragraph generate \
   --scope region \
   --region-set continent \
   --region Europe \
-  --date YYYY-MM-DD \
-  --unit celsius
+  --date YYYY-MM-DD
 ```
 
 For a location:
@@ -54,11 +28,75 @@ For a location:
 uv run reuters-climate-paragraph generate \
   --scope location \
   --label "Paris" \
-  --date YYYY-MM-DD \
-  --unit celsius
+  --date YYYY-MM-DD
 ```
 
 The shorter `rcp` command is an alias for `reuters-climate-paragraph`.
+
+## Example output
+
+The CLI prints JSON containing the published values, the ready-to-use
+paragraph, and links for verification. For example:
+
+```console
+$ uv run reuters-climate-paragraph generate \
+    --scope global \
+    --date 2026-09-22
+{
+  "anomaly": 1.2,
+  "anomaly_c": 1.234,
+  "anomaly_direction": "above",
+  "caution": "Verify the date, place, and figures against the linked Reuters Climate Monitor before publication.",
+  "coordinates": null,
+  "daily_high": 20,
+  "daily_high_c": 20.04,
+  "date": "2026-09-22",
+  "geocoder_url": null,
+  "label": "the globe",
+  "land_swapped": false,
+  "normal_high": 19,
+  "normal_high_c": 18.99,
+  "paragraph": "On Tuesday, the global average high is forecast to reach 20 degrees Celsius (68 degrees Fahrenheit), which is 1.2 C (2.2 F) above the 1961\u20131990 average, according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).",
+  "scope": "global",
+  "site_url": "https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/"
+}
+```
+
+Location requests include the resolved grid-cell coordinates. Coordinates can
+be supplied directly when a user has already identified the place:
+
+```console
+$ uv run reuters-climate-paragraph generate \
+    --scope location \
+    --label "Paris" \
+    --lat 48.8566 \
+    --lng 2.3522 \
+    --date 2026-08-01
+{
+  "anomaly": 5.3,
+  "anomaly_c": 5.3,
+  "anomaly_direction": "above",
+  "caution": "Verify the date, place, and figures against the linked Reuters Climate Monitor before publication.",
+  "coordinates": [
+    2.25,
+    48.75
+  ],
+  "daily_high": 28,
+  "daily_high_c": 28.2,
+  "date": "2026-08-01",
+  "geocoder_url": null,
+  "label": "Paris",
+  "land_swapped": false,
+  "normal_high": 23,
+  "normal_high_c": 22.9,
+  "paragraph": "On August 1, 2026, the high in Paris reached 28 degrees Celsius (83 degrees Fahrenheit), which is 5.3 C (9.5 F) above the 1961\u20131990 average, according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).",
+  "scope": "location",
+  "site_url": "https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/?lat=48.8566&lng=2.3522&zoom=6&place=Paris",
+}
+```
+
+The values above are examples of the output shape; the CLI always fetches the
+requested date from the published feeds.
 
 ## Package for Claude Desktop
 
@@ -90,7 +128,7 @@ complete output policy.
 
 ### Temperature references
 
-> Spell out *Celsius* or *Fahrenheit* on first reference with the word degrees. Do not use centigrade. Use figures except for zero and abbreviate to C and F on second reference. Write *86 degrees Fahrenheit (30 degrees Celsius)* on first reference and *86 F (30 C)* on second reference with a space between the numbers and letter. Spell out minus for clarity, as in *minus 10 C,* not -10 C. Note that temperatures are not hot or cold but high or low.
+> Spell out _Celsius_ or _Fahrenheit_ on first reference with the word degrees. Do not use centigrade. Use figures except for zero and abbreviate to C and F on second reference. Write _86 degrees Fahrenheit (30 degrees Celsius)_ on first reference and _86 F (30 C)_ on second reference with a space between the numbers and letter. Spell out minus for clarity, as in _minus 10 C,_ not -10 C. Note that temperatures are not hot or cold but high or low.
 
 This skill always presents Celsius first and the Fahrenheit equivalent in
 parentheses, such as `86 degrees Celsius (187 degrees Fahrenheit)`. Anomalies
@@ -119,8 +157,9 @@ make verify
 
 `make test` is offline and uses synthetic feed and vector-tile responses.
 `make live-test` checks the current global, Europe, and Paris readings against
-the published Reuters endpoints, plus a pinned historical Paris grid cell and
-the geocoded Swisher, Iowa lookup. `make skill-test` checks the Skill metadata,
+the published [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/)
+endpoints, plus a pinned historical Paris grid cell and the geocoded Swisher,
+Iowa lookup. `make skill-test` checks the Skill metadata,
 instructions, review cases, and both CLI entrypoints.
 `make verify-fast` is the recommended fast local loop; `make verify` includes
 the slower live checks. Network access is required for live data lookups and
@@ -134,10 +173,11 @@ installation when changing `SKILL.md`; check that each response follows its
 
 ## Rights and attribution
 
-The code in this repository is available under the MIT license. Reuters
-Climate Monitor data, Reuters trademarks and branding, editorial copy, and
-visual design are not included in that license. Use the live data feeds only
-as permitted by their owners and keep Reuters attribution when required.
+The code in this repository is available under the MIT license. [Reuters
+Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/)
+data, Reuters trademarks and branding, editorial copy, and visual design are
+not included in that license. Use the live data feeds only
+as permitted by their owners and keep Reuters attribution.
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting and
 [CONTRIBUTING.md](CONTRIBUTING.md) for development guidance.

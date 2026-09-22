@@ -55,7 +55,7 @@ def test_today_global_region_and_location_are_published() -> None:
     ):
         assert observation.date == day
         assert_finite_observation(observation)
-        formatted = format_observation(observation, "celsius")
+        formatted = format_observation(observation)
         assert isinstance(formatted["daily_high"], int)
         assert f"({SITE_ROOT})" in formatted["paragraph"]
         assert "degrees Celsius (" in formatted["paragraph"]
@@ -97,7 +97,7 @@ def test_pinned_historical_location_has_stable_published_values() -> None:
     assert observation.source_urls == (
         f"{ERA5_MAP_ROOT}/{PINNED_DATE}/t2m_max_delta.pmtiles",
     )
-    formatted = format_observation(observation, "celsius")
+    formatted = format_observation(observation)
     assert (
         "reached 28 degrees Celsius (83 degrees Fahrenheit)" in formatted["paragraph"]
     )

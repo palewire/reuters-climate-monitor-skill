@@ -76,8 +76,12 @@ Run the full local verification suite:
 make verify
 ```
 
-The tests are offline and use synthetic feed and vector-tile responses. A
-network smoke check is intentionally not part of the default test command.
+`make test` is offline and uses synthetic feed and vector-tile responses.
+`make live-test` checks the current global, Europe, and Paris readings against
+the published Reuters endpoints, plus a pinned historical Paris grid cell.
+`make verify-fast` is the recommended fast local loop; `make verify` includes
+the slower live checks. Network access is required for live data lookups and
+package installation.
 
 ## Rights and attribution
 

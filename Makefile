@@ -8,7 +8,7 @@ COVERAGE_FAIL_UNDER ?= 80
 TEST_ARGS ?=
 RUN = $(if $(UV_PYTHON),UV_PYTHON=$(UV_PYTHON)) $(UV) run
 
-.PHONY: all help bootstrap install install-all install-dev install-test install-test-extras check verify diff-check lint format-check format fix type-check dependency-check workflow-check manifest-check test test-serial test-parallel coverage build package-check package-verify hooks clean
+.PHONY: all help bootstrap install install-all install-dev install-test install-test-extras check verify verify-fast live-test diff-check lint format-check format fix type-check dependency-check workflow-check manifest-check test test-serial test-parallel coverage build package-check package-verify hooks clean
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_-]+:.*## / {printf "%-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -34,7 +34,9 @@ all: verify ## Run the complete verification suite
 
 check: diff-check lint format-check type-check dependency-check workflow-check ## Run fast, non-mutating code checks
 
-verify: check test manifest-check build ## Run all local CI checks
+verify-fast: check test manifest-check build ## Run checks without live network requests
+
+verify: verify-fast live-test ## Run all checks, including live Reuters data
 
 diff-check: ## Check the diff for whitespace errors
 	git diff --check
@@ -65,16 +67,19 @@ manifest-check: ## Check source distribution contents
 	$(RUN) check-manifest
 
 test: ## Run tests serially
-	$(RUN) pytest $(TEST_ARGS)
+	$(RUN) pytest -m "not integration" $(TEST_ARGS)
 
 test-serial: test ## Run tests without parallel workers
 
 test-parallel: ## Run independent tests with parallel workers
-	$(RUN) pytest -n auto $(TEST_ARGS)
+	$(RUN) pytest -m "not integration" -n auto $(TEST_ARGS)
+
+live-test: ## Run live Reuters data checks
+	$(RUN) pytest -m integration $(TEST_ARGS)
 
 coverage: ## Enforce coverage for PACKAGE
 	@test -n "$(PACKAGE)" || { echo "Set PACKAGE to the library import name."; exit 2; }
-	$(RUN) pytest $(TEST_ARGS) --cov="$(PACKAGE)" --cov-branch --cov-report=term-missing:skip-covered --cov-fail-under="$(COVERAGE_FAIL_UNDER)"
+	$(RUN) pytest -m "not integration" $(TEST_ARGS) --cov="$(PACKAGE)" --cov-branch --cov-report=term-missing:skip-covered --cov-fail-under="$(COVERAGE_FAIL_UNDER)"
 
 build: ## Build source and wheel distributions
 	rm -rf dist

@@ -128,10 +128,13 @@ paragraph into a stronger claim. In particular:
 From this skill directory:
 
 ```bash
-uv run pytest
+uv run pytest -m "not integration"
+uv run pytest -m integration
 uv run ruff check .
 uv run ty check
 ```
 
-The tests are offline and use synthetic feed and vector-tile responses. A
-network smoke check is intentionally not part of the default test command.
+The default test command is offline and uses synthetic feed and vector-tile
+responses. The integration command checks the current global, Europe, and
+Paris readings against the published Reuters endpoints, plus a pinned
+historical Paris grid cell.

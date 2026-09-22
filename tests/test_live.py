@@ -9,7 +9,8 @@ import pytest
 
 from reuters_climate_paragraph.cli import (
     CDN_ROOT,
-    MAP_ROOT,
+    ERA5_MAP_ROOT,
+    HRES_MAP_ROOT,
     SITE_ROOT,
     ClimateMonitorClient,
     format_observation,
@@ -54,7 +55,7 @@ def test_today_global_region_and_location_are_published() -> None:
     ):
         assert observation.date == day
         assert_finite_observation(observation)
-        formatted = format_observation(observation, "celsius")
+        formatted = format_observation(observation)
         assert isinstance(formatted["daily_high"], int)
         assert f"({SITE_ROOT})" in formatted["paragraph"]
         assert "degrees Celsius (" in formatted["paragraph"]
@@ -71,7 +72,7 @@ def test_today_global_region_and_location_are_published() -> None:
         f"{CDN_ROOT}/region-sets/continent/latest-daily-averages.json",
     )
     assert paris_observation.source_urls == (
-        f"{MAP_ROOT}/{day}/t2m_max_delta_data.pmtiles",
+        f"{HRES_MAP_ROOT}/{day}/t2m_max_delta_data.pmtiles",
     )
     assert paris_observation.coordinates == (2.25, 48.75)
 
@@ -90,12 +91,17 @@ def test_pinned_historical_location_has_stable_published_values() -> None:
     assert observation.date == PINNED_DATE
     assert observation.coordinates == (2.25, 48.75)
     assert observation.land_swapped is False
-    assert observation.daily_high_c == pytest.approx(27.2, abs=0.00001)
-    assert observation.normal_high_c == pytest.approx(23.6, abs=0.00001)
-    assert observation.anomaly_c == pytest.approx(4.1, abs=0.00001)
+    assert observation.daily_high_c == pytest.approx(28.2, abs=0.00001)
+    assert observation.normal_high_c == pytest.approx(22.9, abs=0.00001)
+    assert observation.anomaly_c == pytest.approx(5.3, abs=0.00001)
     assert observation.source_urls == (
-        f"{MAP_ROOT}/{PINNED_DATE}/t2m_max_delta_data.pmtiles",
+        f"{ERA5_MAP_ROOT}/{PINNED_DATE}/t2m_max_delta.pmtiles",
     )
+    formatted = format_observation(observation)
+    assert (
+        "reached 28 degrees Celsius (83 degrees Fahrenheit)" in formatted["paragraph"]
+    )
+    assert "is forecast to reach" not in formatted["paragraph"]
 
 
 @pytest.mark.integration

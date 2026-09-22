@@ -47,12 +47,12 @@ def test_skill_instructions_define_the_output_contract() -> None:
         "Celsius first",
         "caution",
         "`site_url`",
-        "`source_urls`",
         "`geocoder_url`",
         "Do not add rankings",
     )
     for phrase in required_phrases:
         assert phrase in body
+    assert "`source_urls`" not in body
 
 
 def test_documented_commands_use_the_current_entrypoint() -> None:

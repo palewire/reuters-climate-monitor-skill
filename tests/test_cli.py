@@ -10,11 +10,13 @@ import mapbox_vector_tile
 import pytest
 
 from reuters_climate_paragraph.cli import (
-    CDN_ROOT,
+    ERA5_MAP_ROOT,
+    HRES_MAP_ROOT,
     SITE_ROOT,
     ClimateMonitorClient,
     ClimateMonitorError,
     Observation,
+    anomaly_map_url,
     choose_feature,
     format_observation,
     geocode_place,
@@ -44,9 +46,20 @@ def feed_row(day: str, **extra: Any) -> dict[str, Any]:
     }
 
 
+def test_anomaly_map_url_selects_published_source_by_date() -> None:
+    """Past point readings use ERA5 while current readings use HRES."""
+    assert (
+        anomaly_map_url("2026-09-21", today=date(2026, 9, 22))
+        == f"{ERA5_MAP_ROOT}/2026-09-21/t2m_max_delta.pmtiles"
+    )
+    assert (
+        anomaly_map_url("2026-09-22", today=date(2026, 9, 22))
+        == f"{HRES_MAP_ROOT}/2026-09-22/t2m_max_delta_data.pmtiles"
+    )
+
+
 def test_global_generation_uses_exact_date_and_published_delta() -> None:
     """The global output uses the feed anomaly rather than recomputing it."""
-    url = f"{CDN_ROOT}/daily-global-averages/latest-daily-averages.json"
     client = ClimateMonitorClient(
         json_fetcher=lambda requested: [
             feed_row("2026-09-21"),
@@ -63,7 +76,6 @@ def test_global_generation_uses_exact_date_and_published_delta() -> None:
         client,
         "global",
         "2026-09-22",
-        "celsius",
         today=date(2026, 9, 22),
     )
 
@@ -77,7 +89,8 @@ def test_global_generation_uses_exact_date_and_published_delta() -> None:
         "according to the [Reuters Climate "
         f"Monitor]({SITE_ROOT})."
     )
-    assert payload["source_urls"] == [url]
+    assert payload["site_url"] == SITE_ROOT
+    assert "source_urls" not in payload
 
 
 def test_region_generation_filters_the_requested_region() -> None:
@@ -93,12 +106,11 @@ def test_region_generation_filters_the_requested_region() -> None:
         client,
         "region",
         "2026-09-22",
-        "fahrenheit",
         region_set="continent",
         region="Europe",
     )
 
-    assert payload["anomaly"] == 6.3
+    assert payload["anomaly"] == 3.5
     assert (
         "20 degrees Celsius (68 degrees Fahrenheit), which is 3.5 C (6.3 F) above"
         in payload["paragraph"]
@@ -118,26 +130,23 @@ def test_formatting_uses_weekday_today_and_whole_degree_absolute_values() -> Non
         site_url=SITE_ROOT,
     )
 
-    today_output = format_observation(
-        observation,
-        "fahrenheit",
-        today=date(2026, 9, 22),
-    )
-    historical_output = format_observation(
-        observation,
-        "fahrenheit",
-        today=date(2026, 9, 23),
-    )
+    today_output = format_observation(observation, today=date(2026, 9, 22))
+    historical_output = format_observation(observation, today=date(2026, 9, 23))
 
-    assert today_output["daily_high"] == 68
-    assert today_output["normal_high"] == 64
-    assert today_output["anomaly"] == 3.6
+    assert today_output["daily_high"] == 20
+    assert today_output["normal_high"] == 18
+    assert today_output["anomaly"] == 2
     assert "On Tuesday," in today_output["paragraph"]
     assert (
         "reach 20 degrees Celsius (68 degrees Fahrenheit), which is 2.0 C (3.6 F) above"
         in today_output["paragraph"]
     )
     assert "On September 22, 2026," in historical_output["paragraph"]
+    assert (
+        "reached 20 degrees Celsius (68 degrees Fahrenheit)"
+        in historical_output["paragraph"]
+    )
+    assert "is forecast to reach" not in historical_output["paragraph"]
 
 
 def test_formatting_spells_out_zero_and_minus() -> None:
@@ -153,7 +162,7 @@ def test_formatting_spells_out_zero_and_minus() -> None:
         site_url=SITE_ROOT,
     )
 
-    output = format_observation(observation, "celsius", today=date(2026, 9, 22))
+    output = format_observation(observation, today=date(2026, 9, 22))
 
     assert (
         "reach minus 10 degrees Celsius (13 degrees Fahrenheit), which is "
@@ -170,7 +179,7 @@ def test_formatting_spells_out_zero_and_minus() -> None:
         source_urls=(),
         site_url=SITE_ROOT,
     )
-    output = format_observation(observation, "celsius", today=date(2026, 9, 22))
+    output = format_observation(observation, today=date(2026, 9, 22))
 
     assert (
         "reach zero degrees Celsius (32 degrees Fahrenheit), which is zero C (zero F) at"
@@ -183,7 +192,7 @@ def test_missing_date_is_an_error_instead_of_a_silent_fallback() -> None:
     client = ClimateMonitorClient(json_fetcher=lambda _: [feed_row("2026-09-21")])
 
     with pytest.raises(ClimateMonitorError, match="refusing to substitute"):
-        run_generation(client, "global", "2026-09-22", "celsius")
+        run_generation(client, "global", "2026-09-22")
 
 
 def test_location_land_fallback_and_verification_url() -> None:
@@ -242,7 +251,6 @@ def test_location_land_fallback_and_verification_url() -> None:
             client,
             "location",
             "2026-09-22",
-            "celsius",
             label="Test Coast",
         )
     finally:
@@ -253,7 +261,7 @@ def test_location_land_fallback_and_verification_url() -> None:
     assert "the high in Test Coast" in payload["paragraph"]
     assert "lat=0" in payload["site_url"]
     assert payload["geocoder_url"].startswith("https://www.openstreetmap.org/")
-    assert payload["source_urls"][0].endswith("/2026-09-22/t2m_max_delta_data.pmtiles")
+    assert "source_urls" not in payload
 
 
 def test_nominatim_results_are_cached(
@@ -292,6 +300,26 @@ def test_choose_feature_ignores_non_point_features() -> None:
     )
 
 
+def test_choose_feature_prefers_published_grid_coordinates() -> None:
+    """ERA5 properties prevent MVT coordinate quantization from shifting cells."""
+    chosen = choose_feature(
+        [
+            {
+                "geometry": {"type": "Point", "coordinates": [0, 0]},
+                "properties": {"longitude": 2.25, "latitude": 48.75},
+            }
+        ],
+        129,
+        88,
+        48.8566,
+        2.3522,
+        8,
+    )
+
+    assert chosen is not None
+    assert chosen["coordinates"] == (2.25, 48.75)
+
+
 def test_grid_rounding_matches_frontend_boundary_behavior() -> None:
     """Grid snapping follows the frontend's quarter-degree rule."""
     assert snap_to_grid(48.8566) == 48.75
@@ -303,30 +331,17 @@ def test_invalid_requests_are_rejected() -> None:
     client = ClimateMonitorClient(json_fetcher=lambda _: [])
 
     with pytest.raises(ClimateMonitorError, match="Date must use"):
-        run_generation(client, "global", "not-a-date", "celsius")
+        run_generation(client, "global", "not-a-date")
     with pytest.raises(ClimateMonitorError, match="Region requests need"):
-        run_generation(client, "region", "2026-09-22", "celsius")
+        run_generation(client, "region", "2026-09-22")
     with pytest.raises(ClimateMonitorError, match="Location requests need"):
-        run_generation(client, "location", "2026-09-22", "celsius")
+        run_generation(client, "location", "2026-09-22")
     with pytest.raises(ClimateMonitorError, match="Scope must be"):
-        run_generation(client, "other", "2026-09-22", "celsius")
+        run_generation(client, "other", "2026-09-22")
 
 
 def test_invalid_values_and_geographies_are_rejected() -> None:
-    """Formatting and geography validation reject unsupported values."""
-    observation = Observation(
-        scope="global",
-        label="the globe",
-        date="2026-09-22",
-        daily_high_c=20,
-        normal_high_c=18,
-        anomaly_c=2,
-        source_urls=(),
-        site_url="https://example.test",
-    )
-
-    with pytest.raises(ClimateMonitorError, match="Unit must be"):
-        format_observation(observation, "kelvin")
+    """Geography validation rejects unsupported values."""
     with pytest.raises(ClimateMonitorError, match="Latitude"):
         validate_coordinates(91, 0)
     with pytest.raises(ClimateMonitorError, match="Longitude"):

@@ -25,6 +25,7 @@ from reuters_climate_paragraph.cli import (
     validate_region_request,
 )
 from reuters_climate_paragraph.geocoder import NominatimGeocoder
+from reuters_climate_paragraph.map_data import PointDataReader
 
 
 def feed_row(day: str, **extra: Any) -> dict[str, Any]:
@@ -240,21 +241,18 @@ def test_location_land_fallback_and_verification_url() -> None:
             return feature_tile
 
     client = ClimateMonitorClient(
-        range_source_factory=lambda _: lambda _offset, _length: b"",
+        point_reader=PointDataReader(
+            range_source_factory=lambda _: lambda _offset, _length: b"",
+            reader_factory=FakeReader,
+        ),
         geocoder=lambda _label: (0, 0),
     )
-    original_reader = __import__("reuters_climate_paragraph.cli", fromlist=["Reader"])
-    monkeypatch = pytest.MonkeyPatch()
-    monkeypatch.setattr(original_reader, "Reader", FakeReader)
-    try:
-        payload = run_generation(
-            client,
-            "location",
-            "2026-09-22",
-            label="Test Coast",
-        )
-    finally:
-        monkeypatch.undo()
+    payload = run_generation(
+        client,
+        "location",
+        "2026-09-22",
+        label="Test Coast",
+    )
 
     assert payload["land_swapped"] is True
     assert payload["coordinates"] is not None

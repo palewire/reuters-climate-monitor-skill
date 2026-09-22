@@ -3,10 +3,6 @@ name: reuters-climate-paragraph
 description: >
   Produce a publication-ready paragraph from the Reuters Climate Monitor. Use when a newsroom user asks
   for climate-monitor data.
-compatibility: >
-  Requires Python 3.11+, uv, and network access to the Reuters Climate Monitor
-  CDN. The sidecar uses the Reuters feeds directly and does not scrape page
-  text.
 ---
 
 # Reuters Climate Monitor paragraph
@@ -35,6 +31,7 @@ answer, a cached value, a screenshot, or a legacy feed.
      Add `--region-set continent` (or another published set) to inspect one
      set. Use this command when a user asks which regions are supported or
      gives an ambiguous regional name.
+
 2. Resolve the requested date as an explicit UTC date. Use the current UTC date
    when the user asks for today's reading. Current and future point requests
    use the published HRES map. Past point requests use the published ERA5
@@ -73,6 +70,7 @@ answer, a cached value, a screenshot, or a legacy feed.
 
    Pass `--lat` and `--lng` together only when the user supplies coordinates
    or a trusted newsroom geocoder has already resolved the place.
+
 5. Nominatim lookups are for occasional, user-triggered searches only. The
    sidecar identifies itself with a descriptive `User-Agent`, caches results,
    does not offer autocomplete or bulk geocoding, and sends only the place
@@ -90,6 +88,13 @@ answer, a cached value, a screenshot, or a legacy feed.
    that plainly and do not substitute a different date. If a location is
    resolved to a nearby land grid cell, retain the sidecar's warning and
    resolved coordinates in the verification note.
+9. If the sidecar fails for any other reason, do not write a paragraph. Do not
+   use web search, Reuters page text, a cached value, another feed, or figures
+   supplied outside the sidecar. Report the error plainly. For an HTTP 401 or
+   403, rerun the command once with `--verbose` before reporting the failure.
+   Explain that the environment cannot access the published CDN and ask an
+   administrator to allow `graphics.thomsonreuters.com`. Do not include raw
+   response bodies in the answer.
 
 ## Supported regions
 
@@ -154,7 +159,7 @@ paragraph into a stronger claim. In particular:
 
 ### Temperature references
 
-> Spell out *Celsius* or *Fahrenheit* on first reference with the word degrees. Do not use centigrade. Use figures except for zero and abbreviate to C and F on second reference. Write *86 degrees Fahrenheit (30 degrees Celsius)* on first reference and *86 F (30 C)* on second reference with a space between the numbers and letter. Spell out minus for clarity, as in *minus 10 C,* not -10 C. Note that temperatures are not hot or cold but high or low.
+> Spell out _Celsius_ or _Fahrenheit_ on first reference with the word degrees. Do not use centigrade. Use figures except for zero and abbreviate to C and F on second reference. Write _86 degrees Fahrenheit (30 degrees Celsius)_ on first reference and _86 F (30 C)_ on second reference with a space between the numbers and letter. Spell out minus for clarity, as in _minus 10 C,_ not -10 C. Note that temperatures are not hot or cold but high or low.
 
 Always put Celsius first and the Fahrenheit equivalent in parentheses. For
 example: `86 degrees Celsius (187 degrees Fahrenheit)` and `2.0 C (3.6 F)`.

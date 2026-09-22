@@ -161,6 +161,14 @@ def test_regions_command_lists_published_labels(
     }
 
 
+def test_cli_help_documents_verbose_diagnostics() -> None:
+    """The CLI exposes the network diagnostic switch."""
+    result = CliRunner().invoke(cli_module.cli, ["--help"])
+
+    assert result.exit_code == 0
+    assert "--verbose" in result.output
+
+
 def test_formatting_uses_weekday_today_and_whole_degree_absolute_values() -> None:
     """Today's copy uses a weekday and rounds absolute values to degrees."""
     observation = Observation(

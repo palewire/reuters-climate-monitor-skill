@@ -92,6 +92,21 @@ uv run reuters-climate-paragraph generate \
 
 The shorter `rcp` command is an alias for `reuters-climate-paragraph`.
 
+## Diagnose network failures
+
+Add `--verbose` before the command to print request status, exception details,
+and safe CDN response headers to stderr without changing the JSON output:
+
+```bash
+uv run reuters-climate-paragraph --verbose generate \
+  --scope global \
+  --date YYYY-MM-DD
+```
+
+The diagnostics do not include response bodies or query strings. They can show
+whether a request reached the CDN, which HTTP status it returned, and whether
+the response came from a proxy or content-delivery firewall.
+
 ## CLI example output
 
 The CLI prints JSON containing the published values, the ready-to-use

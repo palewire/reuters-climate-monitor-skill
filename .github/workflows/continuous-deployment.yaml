@@ -131,7 +131,7 @@ jobs:
 
       - id: build
         name: Build releases
-        run: make build
+        run: make build skill-package
 
       - name: Prune uv cache
         run: uv cache prune --ci
@@ -153,6 +153,7 @@ jobs:
       startsWith(github.ref, 'refs/tags') &&
       vars.PACKAGE_IMPORT_NAME != ''
     permissions:
+      contents: write
       id-token: write
     steps:
       - id: fetch
@@ -168,3 +169,13 @@ jobs:
         with:
           verbose: true
           verify-metadata: false
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --verify-tag \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            dist/reuters-climate-paragraph.skill

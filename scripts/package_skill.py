@@ -72,7 +72,7 @@ def parse_args() -> argparse.Namespace:
         Parsed command-line arguments containing the output path.
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("output", type=Path, help="Path for the Skill zip archive")
+    parser.add_argument("output", type=Path, help="Path for the Skill archive")
     return parser.parse_args()
 
 

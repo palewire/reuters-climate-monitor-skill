@@ -82,8 +82,8 @@ skill-test: ## Check Skill metadata, instructions, fixtures, and entrypoints
 	$(RUN) reuters-climate-paragraph --help >/dev/null
 	$(RUN) rcp --help >/dev/null
 
-skill-package: ## Build the portable Claude Skill zip archive
-	$(RUN) python scripts/package_skill.py dist/reuters-climate-paragraph-skill.zip
+skill-package: ## Build the portable Claude Skill archive
+	$(RUN) python scripts/package_skill.py dist/reuters-climate-paragraph.skill
 
 coverage: ## Enforce coverage for PACKAGE
 	@test -n "$(PACKAGE)" || { echo "Set PACKAGE to the library import name."; exit 2; }

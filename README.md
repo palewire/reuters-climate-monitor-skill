@@ -1,7 +1,50 @@
 A portable skill for AI assistants for producing a publication-ready paragraph
 from the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
 
-## Use
+## Use with an AI assistant
+
+The intended newsroom workflow is to ask the assistant for a paragraph in plain
+language. The skill looks up the exact published Reuters Climate Monitor row
+and returns only the ready-to-use paragraph.
+
+### Global
+
+**Input**
+
+> Write today's Reuters Climate Monitor paragraph for the globe.
+
+**Output**
+
+> On Tuesday, the global average high is forecast to reach 20 degrees Celsius
+> (68 degrees Fahrenheit), which is 1.2 C (2.2 F) above the 1961–1990 average,
+> according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
+
+### Region
+
+**Input**
+
+> Write today's Reuters Climate Monitor paragraph for Europe.
+
+**Output**
+
+> On Tuesday, the average high in Europe is forecast to reach 18 degrees
+> Celsius (65 degrees Fahrenheit), which is 3.4 C (6.0 F) above the 1961–1990
+> average, according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
+
+### Location
+
+**Input**
+
+> Write the Reuters Climate Monitor paragraph for Paris on Aug. 1, 2026. Use
+> 48.8566 latitude and 2.3522 longitude.
+
+**Output**
+
+> On August 1, 2026, the high in Paris reached 28 degrees Celsius (83 degrees
+> Fahrenheit), which is 5.3 C (9.5 F) above the 1961–1990 average, according
+> to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).
+
+## Use from the CLI
 
 The skill requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). From the
 skill directory:
@@ -33,10 +76,10 @@ uv run reuters-climate-paragraph generate \
 
 The shorter `rcp` command is an alias for `reuters-climate-paragraph`.
 
-## Example output
+## CLI example output
 
 The CLI prints JSON containing the published values, the ready-to-use
-paragraph, and links for verification. For example:
+paragraph, and links for verification. The same global example above produces:
 
 ```console
 $ uv run reuters-climate-paragraph generate \
@@ -58,6 +101,34 @@ $ uv run reuters-climate-paragraph generate \
   "normal_high_c": 18.99,
   "paragraph": "On Tuesday, the global average high is forecast to reach 20 degrees Celsius (68 degrees Fahrenheit), which is 1.2 C (2.2 F) above the 1961\u20131990 average, according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).",
   "scope": "global",
+  "site_url": "https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/"
+}
+```
+
+The regional example produces:
+
+```console
+$ uv run reuters-climate-paragraph generate \
+    --scope region \
+    --region-set continent \
+    --region Europe \
+    --date 2026-09-22
+{
+  "anomaly": 3.4,
+  "anomaly_c": 3.36,
+  "anomaly_direction": "above",
+  "caution": "Verify the date, place, and figures against the linked Reuters Climate Monitor before publication.",
+  "coordinates": null,
+  "daily_high": 18,
+  "daily_high_c": 18.12,
+  "date": "2026-09-22",
+  "geocoder_url": null,
+  "label": "Europe",
+  "land_swapped": false,
+  "normal_high": 15,
+  "normal_high_c": 14.76,
+  "paragraph": "On Tuesday, the average high in Europe is forecast to reach 18 degrees Celsius (65 degrees Fahrenheit), which is 3.4 C (6.0 F) above the 1961\u20131990 average, according to the [Reuters Climate Monitor](https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/).",
+  "scope": "region",
   "site_url": "https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/"
 }
 ```

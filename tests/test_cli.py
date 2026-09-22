@@ -89,8 +89,8 @@ def test_global_generation_uses_exact_date_and_published_delta() -> None:
     assert payload["anomaly_c"] == 1.234
     assert payload["caution"].startswith("Verify the date")
     assert payload["paragraph"] == (
-        "On Tuesday, the global average high is forecast to reach 20 degrees "
-        "Celsius (68 degrees Fahrenheit), which is 1.2 C (2.2 F) above the "
+        "On Tuesday, the global average high is forecast to reach 20.0 degrees "
+        "Celsius (68.1 degrees Fahrenheit), which is 1.2 C (2.2 F) above the "
         "1961–1990 average, "
         "according to the [Reuters Climate "
         f"Monitor]({SITE_ROOT})."
@@ -118,7 +118,7 @@ def test_region_generation_filters_the_requested_region() -> None:
 
     assert payload["anomaly"] == 3.5
     assert (
-        "20 degrees Celsius (68 degrees Fahrenheit), which is 3.5 C (6.3 F) above"
+        "20.0 degrees Celsius (68.0 degrees Fahrenheit), which is 3.5 C (6.3 F) above"
         in payload["paragraph"]
     )
 
@@ -169,8 +169,8 @@ def test_cli_help_documents_verbose_diagnostics() -> None:
     assert "--verbose" in result.output
 
 
-def test_formatting_uses_weekday_today_and_whole_degree_absolute_values() -> None:
-    """Today's copy uses a weekday and rounds absolute values to degrees."""
+def test_formatting_uses_weekday_today_and_average_precision() -> None:
+    """Today's global copy uses a weekday and one-decimal absolute values."""
     observation = Observation(
         scope="global",
         label="the globe",
@@ -185,17 +185,17 @@ def test_formatting_uses_weekday_today_and_whole_degree_absolute_values() -> Non
     today_output = format_observation(observation, today=date(2026, 9, 22))
     historical_output = format_observation(observation, today=date(2026, 9, 23))
 
-    assert today_output["daily_high"] == 20
-    assert today_output["normal_high"] == 18
+    assert today_output["daily_high"] == 20.0
+    assert today_output["normal_high"] == 18.0
     assert today_output["anomaly"] == 2
     assert "On Tuesday," in today_output["paragraph"]
     assert (
-        "reach 20 degrees Celsius (68 degrees Fahrenheit), which is 2.0 C (3.6 F) above"
+        "reach 20.0 degrees Celsius (68.0 degrees Fahrenheit), which is 2.0 C (3.6 F) above"
         in today_output["paragraph"]
     )
     assert "On September 22, 2026," in historical_output["paragraph"]
     assert (
-        "reached 20 degrees Celsius (68 degrees Fahrenheit)"
+        "reached 20.0 degrees Celsius (68.0 degrees Fahrenheit)"
         in historical_output["paragraph"]
     )
     assert "is forecast to reach" not in historical_output["paragraph"]
@@ -217,7 +217,7 @@ def test_formatting_spells_out_zero_and_minus() -> None:
     output = format_observation(observation, today=date(2026, 9, 22))
 
     assert (
-        "reach minus 10 degrees Celsius (13 degrees Fahrenheit), which is "
+        "reach minus 10.4 degrees Celsius (13.3 degrees Fahrenheit), which is "
         "2.0 C (3.6 F) below"
     ) in output["paragraph"]
 
@@ -225,7 +225,7 @@ def test_formatting_spells_out_zero_and_minus() -> None:
         scope="global",
         label="the globe",
         date="2026-09-22",
-        daily_high_c=0.2,
+        daily_high_c=0,
         normal_high_c=0.1,
         anomaly_c=0,
         source_urls=(),
@@ -234,9 +234,32 @@ def test_formatting_spells_out_zero_and_minus() -> None:
     output = format_observation(observation, today=date(2026, 9, 22))
 
     assert (
-        "reach zero degrees Celsius (32 degrees Fahrenheit), which is zero C (zero F) at"
+        "reach zero degrees Celsius (32.0 degrees Fahrenheit), which is zero C (zero F) at"
         in output["paragraph"]
     )
+
+
+def test_location_absolute_temperatures_stay_at_whole_degrees() -> None:
+    """Local grid-square temperatures remain rounded to whole degrees."""
+    observation = Observation(
+        scope="location",
+        label="Paris",
+        date="2026-09-22",
+        daily_high_c=20.04,
+        normal_high_c=18.99,
+        anomaly_c=1.234,
+        source_urls=(),
+        site_url=SITE_ROOT,
+    )
+
+    output = format_observation(observation, today=date(2026, 9, 22))
+
+    assert output["daily_high"] == 20
+    assert output["normal_high"] == 19
+    assert (
+        "the high in Paris is forecast to reach 20 degrees Celsius "
+        "(68 degrees Fahrenheit), which is 1.2 C (2.2 F) above"
+    ) in output["paragraph"]
 
 
 def test_missing_date_is_an_error_instead_of_a_silent_fallback() -> None:

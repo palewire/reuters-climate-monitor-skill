@@ -28,7 +28,15 @@ by this repository's MIT license.
 
 Use the template-based workflow:
 
+```
+
+Run the Skill-specific contract and entrypoint checks with:
+
 ```bash
+make skill-test
+```
+
+The human-review prompt set lives in `tests/fixtures/skill_eval_cases.json`.bash
 make bootstrap
 make check
 make verify

@@ -98,10 +98,18 @@ make verify
 
 `make test` is offline and uses synthetic feed and vector-tile responses.
 `make live-test` checks the current global, Europe, and Paris readings against
-the published Reuters endpoints, plus a pinned historical Paris grid cell.
+the published Reuters endpoints, plus a pinned historical Paris grid cell and
+the geocoded Swisher, Iowa lookup. `make skill-test` checks the Skill metadata,
+instructions, review cases, and both CLI entrypoints.
 `make verify-fast` is the recommended fast local loop; `make verify` includes
 the slower live checks. Network access is required for live data lookups and
 package installation.
+
+The human-review prompts are listed in
+`tests/fixtures/skill_eval_cases.json`. Run them in the target Claude Desktop
+installation when changing `SKILL.md`; check that each response follows its
+`expected_behavior`, includes every `must_include` item, and avoids every
+`must_not_include` item.
 
 ## Rights and attribution
 

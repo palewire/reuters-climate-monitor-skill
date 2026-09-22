@@ -299,6 +299,9 @@ parentheses, such as `86 degrees Celsius (187 degrees Fahrenheit)`. Anomalies
 follow the same order, such as `2.0 C (3.6 F)`, and the sentence introduces
 the anomaly with “, which is”.
 
+Global and regional average temperatures retain one decimal place. Local
+grid-square temperatures are rounded to the nearest whole degree.
+
 ## Development
 
 Bootstrap the checkout and install all locked dependencies:

@@ -13,7 +13,7 @@ def test_temperature_formatter_converts_celsius_to_fahrenheit() -> None:
 
 
 def test_temperature_formatter_formats_absolute_pairs() -> None:
-    """Absolute values use whole degrees and spelled-out zero and minus."""
+    """Absolute values support whole degrees and one-decimal averages."""
     formatter = TemperatureFormatter()
 
     assert formatter.format_pair(20) == "20 degrees Celsius (68 degrees Fahrenheit)"
@@ -22,6 +22,10 @@ def test_temperature_formatter_formats_absolute_pairs() -> None:
         == "minus 10 degrees Celsius (13 degrees Fahrenheit)"
     )
     assert formatter.format_pair(0.2) == "zero degrees Celsius (32 degrees Fahrenheit)"
+    assert (
+        formatter.format_pair(20.04, absolute_decimal_places=1)
+        == "20.0 degrees Celsius (68.1 degrees Fahrenheit)"
+    )
 
 
 def test_temperature_formatter_formats_anomaly_pairs_by_magnitude() -> None:

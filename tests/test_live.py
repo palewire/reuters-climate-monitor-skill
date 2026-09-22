@@ -56,7 +56,10 @@ def test_today_global_region_and_location_are_published() -> None:
         assert observation.date == day
         assert_finite_observation(observation)
         formatted = format_observation(observation)
-        assert isinstance(formatted["daily_high"], int)
+        if observation.scope == "location":
+            assert isinstance(formatted["daily_high"], int)
+        else:
+            assert isinstance(formatted["daily_high"], float)
         assert f"({SITE_ROOT})" in formatted["paragraph"]
         assert "degrees Celsius (" in formatted["paragraph"]
         assert "degrees Fahrenheit)," in formatted["paragraph"]

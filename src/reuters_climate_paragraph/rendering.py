@@ -60,17 +60,28 @@ class ParagraphRenderer:
         reading_verb = (
             "reached" if parsed_date < current_date else "is forecast to reach"
         )
+        absolute_decimal_places = 1 if observation.scope in {"global", "region"} else 0
+        daily_high = self._temperature_formatter.format_pair(
+            observation.daily_high_c,
+            absolute_decimal_places=absolute_decimal_places,
+        )
         paragraph = (
             f"On {date_label}, {self._subject(observation)} {reading_verb} "
-            f"{self._temperature_formatter.format_pair(observation.daily_high_c)}, "
+            f"{daily_high}, "
             "which is "
             f"{self._temperature_formatter.format_pair(observation.anomaly_c, anomaly=True)} "
             f"{direction} the 1961–1990 average, "
             f"according to the [Reuters Climate Monitor]({self._site_url})."
         )
         return {
-            "daily_high": round(observation.daily_high_c),
-            "normal_high": round(observation.normal_high_c),
+            "daily_high": self._round_absolute(
+                observation.daily_high_c,
+                absolute_decimal_places,
+            ),
+            "normal_high": self._round_absolute(
+                observation.normal_high_c,
+                absolute_decimal_places,
+            ),
             "anomaly": round(observation.anomaly_c, 1),
             "anomaly_direction": direction,
             "caution": CAUTION,
@@ -92,6 +103,21 @@ class ParagraphRenderer:
         if value < 0:
             return "below"
         return "at"
+
+    @staticmethod
+    def _round_absolute(value: float, decimal_places: int) -> int | float:
+        """Round an absolute value while preserving whole-degree integer output.
+
+        Args:
+            value: Absolute temperature in degrees Celsius.
+            decimal_places: Number of decimal places to retain.
+
+        Returns:
+            An integer for whole-degree output or a float for decimal output.
+        """
+        if decimal_places == 0:
+            return round(value)
+        return round(value, decimal_places)
 
     @staticmethod
     def _date_label(parsed_date: date, current_date: date) -> str:

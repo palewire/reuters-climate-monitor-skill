@@ -149,6 +149,8 @@ paragraph into a stronger claim. In particular:
   1961–1990 reference period.
 - The daily high and anomaly for the current monitor day are forecast/model
   values; do not call them a weather-station observation.
+- Global and regional average temperatures use one decimal place. Local grid
+  square temperatures use the nearest whole degree.
 - For a published past point date, the sidecar uses the ERA5 anomaly map and
   says that the high “reached” the value instead of calling it a forecast.
 - Do not describe a global or regional date as historical ERA5 unless the

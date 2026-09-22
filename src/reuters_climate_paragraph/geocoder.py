@@ -12,6 +12,12 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from .diagnostics import (
+    get_logger,
+    log_http_failure,
+    log_http_response,
+    safe_url,
+)
 from .errors import ClimateMonitorError
 
 NOMINATIM_ROOT = "https://nominatim.openstreetmap.org/search"
@@ -20,6 +26,7 @@ NOMINATIM_USER_AGENT = (
     "(https://github.com/palewire/reuters-climate-paragraph)"
 )
 NominatimFetcher = Callable[[str], object]
+LOGGER = get_logger(__name__)
 
 
 class NominatimGeocoder:
@@ -156,12 +163,36 @@ class NominatimGeocoder:
                 "User-Agent": NOMINATIM_USER_AGENT,
             },
         )
+        LOGGER.debug("GET Nominatim response url=%s", safe_url(url))
         try:
             with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
+                log_http_response(
+                    LOGGER,
+                    "GET Nominatim response",
+                    url,
+                    response.getcode(),
+                    response.headers,
+                )
                 return json.load(response)
-        except (OSError, urllib.error.URLError, json.JSONDecodeError) as error:
+        except urllib.error.HTTPError as error:
+            log_http_failure(LOGGER, "GET Nominatim response", url, error)
+            raise ClimateMonitorError(
+                f"Could not read Nominatim response for {url}: "
+                f"HTTP {error.code} {error.reason}"
+            ) from error
+        except (OSError, urllib.error.URLError) as error:
+            log_http_failure(LOGGER, "GET Nominatim response", url, error)
             raise ClimateMonitorError(
                 f"Could not read Nominatim response for {url}: {error}"
+            ) from error
+        except json.JSONDecodeError as error:
+            LOGGER.debug(
+                "GET Nominatim response returned invalid JSON url=%s",
+                safe_url(url),
+                exc_info=True,
+            )
+            raise ClimateMonitorError(
+                f"Could not decode Nominatim response for {url}: {error}"
             ) from error
 
     @staticmethod

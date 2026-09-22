@@ -12,6 +12,12 @@ from typing import Any
 import mapbox_vector_tile
 from pmtiles.reader import Reader
 
+from .diagnostics import (
+    get_logger,
+    log_http_failure,
+    log_http_response,
+    safe_url,
+)
 from .errors import ClimateMonitorError
 from .models import ResolvedMapFeature
 from .urls import DEFAULT_URL_BUILDER, ReutersUrlBuilder
@@ -22,6 +28,7 @@ MAX_LAND_SWAP_DISTANCE = GRID_SIZE * 2
 RangeReader = Callable[[int, int], bytes]
 RangeSourceFactory = Callable[[str], RangeReader]
 TileReaderFactory = Callable[[RangeReader], Any]
+LOGGER = get_logger(__name__)
 
 
 class PointDataReader:
@@ -132,12 +139,31 @@ class PointDataReader:
                     "User-Agent": "ReutersClimateSkill/0.1",
                 },
             )
+            LOGGER.debug(
+                "GET PMTiles range url=%s range=bytes=%s-%s",
+                safe_url(url),
+                offset,
+                end,
+            )
             try:
                 with urllib.request.urlopen(  # noqa: S310
                     request, timeout=30
                 ) as response:
+                    log_http_response(
+                        LOGGER,
+                        "GET PMTiles range",
+                        url,
+                        response.getcode(),
+                        response.headers,
+                    )
                     data = response.read()
+            except urllib.error.HTTPError as error:
+                log_http_failure(LOGGER, "GET PMTiles range", url, error)
+                raise ClimateMonitorError(
+                    f"Could not read Reuters tile {url}: HTTP {error.code} {error.reason}"
+                ) from error
             except (OSError, urllib.error.URLError) as error:
+                log_http_failure(LOGGER, "GET PMTiles range", url, error)
                 raise ClimateMonitorError(
                     f"Could not read Reuters tile {url}: {error}"
                 ) from error

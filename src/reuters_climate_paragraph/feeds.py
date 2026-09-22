@@ -8,11 +8,18 @@ import urllib.request
 from collections.abc import Callable
 from typing import Any, cast
 
+from .diagnostics import (
+    get_logger,
+    log_http_failure,
+    log_http_response,
+    safe_url,
+)
 from .errors import ClimateMonitorError
 from .requests import REGION_SETS, GenerationRequest
 from .urls import DEFAULT_URL_BUILDER, ReutersUrlBuilder
 
 JsonFetcher = Callable[[str], object]
+LOGGER = get_logger(__name__)
 
 
 class MonitorFeedClient:
@@ -153,12 +160,31 @@ class MonitorFeedClient:
                 "User-Agent": "ReutersClimateSkill/0.1",
             },
         )
+        LOGGER.debug("GET JSON feed url=%s", safe_url(url))
         try:
             with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
+                log_http_response(
+                    LOGGER,
+                    "GET JSON feed",
+                    url,
+                    response.getcode(),
+                    response.headers,
+                )
                 return json.load(response)
-        except (OSError, urllib.error.URLError, json.JSONDecodeError) as error:
+        except urllib.error.HTTPError as error:
+            log_http_failure(LOGGER, "GET JSON feed", url, error)
+            raise ClimateMonitorError(
+                f"Could not read Reuters feed {url}: HTTP {error.code} {error.reason}"
+            ) from error
+        except (OSError, urllib.error.URLError) as error:
+            log_http_failure(LOGGER, "GET JSON feed", url, error)
             raise ClimateMonitorError(
                 f"Could not read Reuters feed {url}: {error}"
+            ) from error
+        except json.JSONDecodeError as error:
+            LOGGER.debug("GET JSON feed returned invalid JSON url=%s", safe_url(url), exc_info=True)
+            raise ClimateMonitorError(
+                f"Could not decode Reuters feed {url}: {error}"
             ) from error
 
     @staticmethod

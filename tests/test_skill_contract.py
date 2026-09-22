@@ -34,7 +34,7 @@ def test_skill_metadata_has_required_discovery_fields() -> None:
     assert "name: reuters-climate-paragraph" in frontmatter
     assert "description:" in frontmatter
     assert "Use when a newsroom user asks" in frontmatter
-    assert "compatibility:" in frontmatter
+    assert "compatibility:" not in frontmatter
 
 
 def test_skill_instructions_define_the_output_contract() -> None:
@@ -49,6 +49,8 @@ def test_skill_instructions_define_the_output_contract() -> None:
         "`site_url`",
         "`geocoder_url`",
         "Do not add rankings",
+        "--verbose",
+        "graphics.thomsonreuters.com",
     )
     for phrase in required_phrases:
         assert phrase in body

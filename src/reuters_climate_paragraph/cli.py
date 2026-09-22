@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from datetime import date
 
 from .client import ClimateMonitorClient as _ClimateMonitorClient
+from .diagnostics import configure_logging as _configure_logging
 from .errors import ClimateMonitorError as _ClimateMonitorError
 from .feeds import MonitorFeedClient as _MonitorFeedClient
 from .generation import ParagraphGenerator as _ParagraphGenerator
@@ -68,8 +69,14 @@ def run_generation(
 
 
 @click.group()
-def cli() -> None:
+@click.option(
+    "--verbose",
+    is_flag=True,
+    help="Print network diagnostics to stderr when a request fails.",
+)
+def cli(verbose: bool) -> None:
     """Generate Reuters Climate Monitor newsroom copy."""
+    _configure_logging(verbose)
 
 
 @cli.command()

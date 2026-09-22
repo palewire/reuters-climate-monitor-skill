@@ -121,17 +121,24 @@ def run_generation(
     Raises:
         ClimateMonitorError: If the request arguments are incomplete.
     """
-    return ParagraphGenerator.generate_args(
-        client,
-        scope,
-        day,
-        region_set=region_set,
-        region=region,
-        label=label,
-        lat=lat,
-        lng=lng,
-        today=today,
-    )
+    generator = ParagraphGenerator(client)
+    if scope == "global":
+        return generator.generate_global(day, today=today)
+    if scope == "region":
+        if region_set is None or region is None:
+            raise ClimateMonitorError("Region requests need --region-set and --region")
+        return generator.generate_region(region_set, region, day, today=today)
+    if scope == "location":
+        if label is None:
+            raise ClimateMonitorError("Location requests need --label")
+        return generator.generate_location(
+            label,
+            day,
+            lat=lat,
+            lng=lng,
+            today=today,
+        )
+    raise ClimateMonitorError("Scope must be global, region, or location")
 
 
 @click.group()

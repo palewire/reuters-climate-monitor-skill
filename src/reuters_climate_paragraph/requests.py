@@ -1,10 +1,10 @@
-"""Validated requests for paragraph generation."""
+"""Validated request types for paragraph generation."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
-from typing import Literal
+from typing import ClassVar, Literal
 
 from .errors import ClimateMonitorError
 
@@ -28,96 +28,30 @@ REGION_SETS = {
 
 @dataclass(frozen=True)
 class GenerationRequest:
-    """A complete, validated request for one paragraph.
+    """Base request shared by the three supported generation scopes.
 
     Args:
-        scope: ``global``, ``region``, or ``location``.
         day: Exact UTC date in ``YYYY-MM-DD`` form.
-        region_set: Region-set slug for a regional request.
-        region: Display label for a regional request.
-        label: Place label for a location request.
-        lat: Location latitude, or ``None`` when geocoding.
-        lng: Location longitude, or ``None`` when geocoding.
         today: Optional current date used by deterministic tests.
 
     Example:
-        ``GenerationRequest.from_args("global", "2026-09-22")``
+        ``GlobalRequest(day="2026-09-22")``
     """
 
-    scope: Scope
     day: str
-    region_set: str | None = None
-    region: str | None = None
-    label: str | None = None
-    lat: float | None = None
-    lng: float | None = None
-    today: date | None = None
+    today: date | None = field(default=None, kw_only=True)
+    scope: ClassVar[Scope]
 
-    @classmethod
-    def from_args(
-        cls,
-        scope: str,
-        day: str,
-        *,
-        region_set: str | None = None,
-        region: str | None = None,
-        label: str | None = None,
-        lat: float | None = None,
-        lng: float | None = None,
-        today: date | None = None,
-    ) -> GenerationRequest:
-        """Build and validate a request from CLI-style arguments.
-
-        Args:
-            scope: Requested scope.
-            day: Exact UTC date.
-            region_set: Region-set slug for a regional request.
-            region: Display label for a regional request.
-            label: Place label for a location request.
-            lat: Location latitude.
-            lng: Location longitude.
-            today: Optional current date used by deterministic tests.
-
-        Returns:
-            A validated generation request.
+    def __post_init__(self) -> None:
+        """Validate the shared date field.
 
         Raises:
-            ClimateMonitorError: If the request is incomplete or malformed.
+            ClimateMonitorError: If ``day`` is not an ISO date.
         """
         try:
-            date.fromisoformat(day)
+            date.fromisoformat(self.day)
         except ValueError as error:
             raise ClimateMonitorError("Date must use YYYY-MM-DD") from error
-
-        if scope == "global":
-            return cls(scope="global", day=day, today=today)
-        if scope == "region":
-            if region_set is None or region is None:
-                raise ClimateMonitorError(
-                    "Region requests need --region-set and --region"
-                )
-            cls.validate_region_request(region_set, region)
-            return cls(
-                scope="region",
-                day=day,
-                region_set=region_set,
-                region=region,
-                today=today,
-            )
-        if scope == "location":
-            if label is None:
-                raise ClimateMonitorError("Location requests need --label")
-            if (lat is None) != (lng is None):
-                raise ClimateMonitorError("Location requests need both --lat and --lng")
-            return cls(
-                scope="location",
-                day=day,
-                label=label,
-                lat=lat,
-                lng=lng,
-                today=today,
-            )
-        raise ClimateMonitorError("Scope must be global, region, or location")
 
     @staticmethod
     def validate_region_request(region_set: str, region: str) -> None:
@@ -126,9 +60,6 @@ class GenerationRequest:
         Args:
             region_set: Published region-set slug.
             region: Exact display label.
-
-        Returns:
-            None.
 
         Raises:
             ClimateMonitorError: If the request is unsupported.
@@ -143,15 +74,66 @@ class GenerationRequest:
             raise ClimateMonitorError(f"Unknown continent {region!r}")
 
 
+@dataclass(frozen=True)
+class GlobalRequest(GenerationRequest):
+    """Request the global published daily average."""
+
+    scope: ClassVar[Literal["global"]] = "global"
+
+
+@dataclass(frozen=True)
+class RegionRequest(GenerationRequest):
+    """Request one named published regional daily average.
+
+    Args:
+        day: Exact UTC date in ``YYYY-MM-DD`` form.
+        region_set: Published region-set slug.
+        region: Exact display label in that feed.
+        today: Optional current date used by deterministic tests.
+    """
+
+    region_set: str
+    region: str
+    scope: ClassVar[Literal["region"]] = "region"
+
+    def __post_init__(self) -> None:
+        """Validate the date and region fields."""
+        super().__post_init__()
+        self.validate_region_request(self.region_set, self.region)
+
+
+@dataclass(frozen=True)
+class LocationRequest(GenerationRequest):
+    """Request the nearest published map cell for a location.
+
+    Args:
+        day: Exact UTC date in ``YYYY-MM-DD`` form.
+        label: Human-readable place label.
+        lat: Latitude override, or ``None`` when geocoding.
+        lng: Longitude override, or ``None`` when geocoding.
+        today: Optional current date used by deterministic tests.
+    """
+
+    label: str
+    lat: float | None = None
+    lng: float | None = None
+    scope: ClassVar[Literal["location"]] = "location"
+
+    def __post_init__(self) -> None:
+        """Validate the label and optional coordinate pair."""
+        super().__post_init__()
+        if not self.label.strip():
+            raise ClimateMonitorError("Location requests need --label")
+        if (self.lat is None) != (self.lng is None):
+            raise ClimateMonitorError("Location requests need both --lat and --lng")
+
+
 def validate_region_request(region_set: str, region: str) -> None:
-    """Reject unsupported region-set and region combinations.
+    """Validate a region request for compatibility callers.
 
     Args:
         region_set: Published region-set slug.
         region: Exact display label.
-
-    Returns:
-        None.
 
     Raises:
         ClimateMonitorError: If the request is unsupported.

@@ -64,7 +64,8 @@ complete output policy.
 
 This skill always presents Celsius first and the Fahrenheit equivalent in
 parentheses, such as `86 degrees Celsius (187 degrees Fahrenheit)`. Anomalies
-follow the same order, such as `2.0 C (3.6 F)`.
+follow the same order, such as `2.0 C (3.6 F)`, and the sentence introduces
+the anomaly with “, which is”.
 
 ## Development
 

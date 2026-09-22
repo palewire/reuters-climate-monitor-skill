@@ -649,7 +649,7 @@ def format_observation(
         subject = f"the high in {observation.label}"
     paragraph = (
         f"On {date_label}, {subject} is forecast to reach "
-        f"{format_temperature_pair(observation.daily_high_c)}, "
+        f"{format_temperature_pair(observation.daily_high_c)}, which is "
         f"{format_temperature_pair(observation.anomaly_c, anomaly=True)} {direction} "
         "the 1961–1990 average, "
         f"according to the [Reuters Climate Monitor]({SITE_ROOT})."

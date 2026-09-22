@@ -70,7 +70,8 @@ def test_global_generation_uses_exact_date_and_published_delta() -> None:
     assert payload["anomaly_c"] == 1.234
     assert payload["paragraph"] == (
         "On Tuesday, the global average high is forecast to reach 20 degrees "
-        "Celsius (68 degrees Fahrenheit), 1.2 C (2.2 F) above the 1961–1990 average, "
+        "Celsius (68 degrees Fahrenheit), which is 1.2 C (2.2 F) above the "
+        "1961–1990 average, "
         "according to the [Reuters Climate "
         f"Monitor]({SITE_ROOT})."
     )
@@ -97,7 +98,7 @@ def test_region_generation_filters_the_requested_region() -> None:
 
     assert payload["anomaly"] == 6.3
     assert (
-        "20 degrees Celsius (68 degrees Fahrenheit), 3.5 C (6.3 F) above"
+        "20 degrees Celsius (68 degrees Fahrenheit), which is 3.5 C (6.3 F) above"
         in payload["paragraph"]
     )
 
@@ -131,7 +132,7 @@ def test_formatting_uses_weekday_today_and_whole_degree_absolute_values() -> Non
     assert today_output["anomaly"] == 3.6
     assert "On Tuesday," in today_output["paragraph"]
     assert (
-        "reach 20 degrees Celsius (68 degrees Fahrenheit), 2.0 C (3.6 F) above"
+        "reach 20 degrees Celsius (68 degrees Fahrenheit), which is 2.0 C (3.6 F) above"
         in today_output["paragraph"]
     )
     assert "On September 22, 2026," in historical_output["paragraph"]
@@ -153,7 +154,8 @@ def test_formatting_spells_out_zero_and_minus() -> None:
     output = format_observation(observation, "celsius", today=date(2026, 9, 22))
 
     assert (
-        "reach minus 10 degrees Celsius (13 degrees Fahrenheit), 2.0 C (3.6 F) below"
+        "reach minus 10 degrees Celsius (13 degrees Fahrenheit), which is "
+        "2.0 C (3.6 F) below"
     ) in output["paragraph"]
 
     observation = Observation(
@@ -169,7 +171,7 @@ def test_formatting_spells_out_zero_and_minus() -> None:
     output = format_observation(observation, "celsius", today=date(2026, 9, 22))
 
     assert (
-        "reach zero degrees Celsius (32 degrees Fahrenheit), zero C (zero F) at"
+        "reach zero degrees Celsius (32 degrees Fahrenheit), which is zero C (zero F) at"
         in output["paragraph"]
     )
 

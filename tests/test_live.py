@@ -58,6 +58,7 @@ def test_today_global_region_and_location_are_published() -> None:
         assert f"({SITE_ROOT})" in formatted["paragraph"]
         assert "degrees Celsius (" in formatted["paragraph"]
         assert "degrees Fahrenheit)," in formatted["paragraph"]
+        assert ", which is " in formatted["paragraph"]
         assert f"{abs(observation.anomaly_c):.1f} C (" in formatted["paragraph"]
         assert " F)" in formatted["paragraph"]
         assert formatted["paragraph"]

@@ -134,6 +134,8 @@ paragraph into a stronger claim. In particular:
 
 Always put Celsius first and the Fahrenheit equivalent in parentheses. For
 example: `86 degrees Celsius (187 degrees Fahrenheit)` and `2.0 C (3.6 F)`.
+Introduce the anomaly with “, which is” to give the two temperature statements
+space in the sentence.
 
 ## Development and tests
 

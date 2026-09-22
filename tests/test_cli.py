@@ -19,12 +19,12 @@ from reuters_climate_paragraph.cli import (
     anomaly_map_url,
     choose_feature,
     format_observation,
-    geocode_place,
     run_generation,
     snap_to_grid,
     validate_coordinates,
     validate_region_request,
 )
+from reuters_climate_paragraph.geocoder import NominatimGeocoder
 
 
 def feed_row(day: str, **extra: Any) -> dict[str, Any]:
@@ -264,24 +264,23 @@ def test_location_land_fallback_and_verification_url() -> None:
     assert "source_urls" not in payload
 
 
-def test_nominatim_results_are_cached(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+def test_nominatim_geocoder_caches_results(
+    tmp_path: Any,
 ) -> None:
-    """A place lookup uses the local cache on repeated requests."""
-    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    """A geocoder instance uses its local cache on repeated requests."""
     calls: list[str] = []
 
     def fake_fetch(url: str) -> object:
         calls.append(url)
         return [{"lat": "48.8566", "lon": "2.3522"}]
 
-    monkeypatch.setattr(
-        "reuters_climate_paragraph.cli.fetch_nominatim_json",
-        fake_fetch,
+    geocoder = NominatimGeocoder(
+        cache_path=tmp_path / "nominatim.json",
+        fetcher=fake_fetch,
     )
 
-    assert geocode_place("Paris") == (48.8566, 2.3522)
-    assert geocode_place(" paris ") == (48.8566, 2.3522)
+    assert geocoder("Paris") == (48.8566, 2.3522)
+    assert geocoder(" paris ") == (48.8566, 2.3522)
     assert len(calls) == 1
 
 

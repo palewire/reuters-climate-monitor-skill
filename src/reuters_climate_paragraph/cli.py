@@ -20,10 +20,16 @@ import mapbox_vector_tile
 from pmtiles.reader import Reader
 
 CDN_ROOT = "https://graphics.thomsonreuters.com/newsapps_climate-forecast"
-MAP_ROOT = (
+HRES_MAP_ROOT = (
     "https://graphics.thomsonreuters.com/"
     "newsapps_reuters-climate-monitor/daily-anomalies-map/hres"
 )
+ERA5_MAP_ROOT = (
+    "https://graphics.thomsonreuters.com/"
+    "newsapps_reuters-climate-monitor/daily-anomalies-map/era5"
+)
+# Kept as the current/future map root for callers that import this constant.
+MAP_ROOT = HRES_MAP_ROOT
 SITE_ROOT = "https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/"
 NOMINATIM_ROOT = "https://nominatim.openstreetmap.org/search"
 OPENSTREETMAP_ROOT = "https://www.openstreetmap.org/"
@@ -56,6 +62,30 @@ REGION_SETS = {
 
 JsonFetcher = Callable[[str], object]
 Geocoder = Callable[[str], tuple[float, float]]
+
+
+def anomaly_map_url(day: str, *, today: date | None = None) -> str:
+    """Build the published anomaly map URL for a UTC date.
+
+    Args:
+        day: UTC date in ``YYYY-MM-DD`` form.
+        today: Optional current UTC date used by tests.
+
+    Returns:
+        The HRES URL for today or a future date, or the ERA5 URL for a
+        published past date.
+
+    Raises:
+        ClimateMonitorError: If ``day`` is not an ISO date.
+    """
+    try:
+        parsed_day = date.fromisoformat(day)
+    except ValueError as error:
+        raise ClimateMonitorError(f"Invalid UTC date {day!r}") from error
+    current_date = today or datetime.now(UTC).date()
+    if parsed_day < current_date:
+        return f"{ERA5_MAP_ROOT}/{day}/t2m_max_delta.pmtiles"
+    return f"{HRES_MAP_ROOT}/{day}/t2m_max_delta_data.pmtiles"
 
 
 class ClimateMonitorError(RuntimeError):
@@ -210,7 +240,7 @@ class ClimateMonitorClient:
             lat, lng = self._geocoder(label)
             geocoder_url = build_geocoder_point_url(lat, lng)
         validate_coordinates(lat, lng)
-        url = f"{MAP_ROOT}/{day}/t2m_max_delta_data.pmtiles"
+        url = anomaly_map_url(day)
         reader = Reader(self._range_source_factory(url))
         header = reader.header()
         tile_x, tile_y = tile_coordinates(lng, lat)
@@ -684,13 +714,27 @@ def choose_feature(
         coords = geometry.get("coordinates", [])
         if geometry.get("type") != "Point" or len(coords) != 2:
             continue
-        feature_lng = ((tile_x + coords[0] / extent) / 2**zoom) * 360 - 180
-        n = math.pi - (2 * math.pi * (tile_y + coords[1] / extent)) / 2**zoom
-        feature_lat = math.degrees(math.atan(0.5 * (math.exp(n) - math.exp(-n))))
+        properties = feature.get("properties", {})
+        property_lng = properties.get("longitude")
+        property_lat = properties.get("latitude")
+        if (
+            isinstance(property_lng, (int, float))
+            and math.isfinite(property_lng)
+            and isinstance(property_lat, (int, float))
+            and math.isfinite(property_lat)
+        ):
+            feature_lng = float(property_lng)
+            feature_lat = float(property_lat)
+        else:
+            feature_lng = ((tile_x + coords[0] / extent) / 2**zoom) * 360 - 180
+            n = math.pi - (2 * math.pi * (tile_y + coords[1] / extent)) / 2**zoom
+            feature_lat = math.degrees(
+                math.atan(0.5 * (math.exp(n) - math.exp(-n)))
+            )
         distance = math.hypot(feature_lng - reference_lng, feature_lat - reference_lat)
         points.append(
             {
-                "properties": feature.get("properties", {}),
+                "properties": properties,
                 "distance": distance,
                 "coordinates": (snap_to_grid(feature_lng), snap_to_grid(feature_lat)),
             }

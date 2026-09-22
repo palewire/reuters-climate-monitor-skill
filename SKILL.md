@@ -30,9 +30,12 @@ answer, a cached value, a screenshot, or a legacy feed.
      Nominatim service by default. Explicit user-provided coordinates may be
      passed instead; never guess coordinates.
 2. Resolve the requested date as an explicit UTC date. Use the current UTC date
-   when the user asks for today's reading. For a published past date, the
-   sidecar uses the available historical ERA5 reading and writes the paragraph
-   in the past tense.
+   when the user asks for today's reading. Current and future point requests
+   use the published HRES map. Past point requests use the published ERA5
+   anomaly map and write the paragraph in the past tense. Global and regional
+   requests use the daily averages feed and refuse a date unless that feed
+   publishes all three required values; do not substitute the combined daily
+   feed or calculate a missing anomaly.
 3. Use the fixed Celsius-first, Fahrenheit-in-parentheses presentation. Do not
    ask the user to choose a unit.
 4. Run the sidecar from this skill directory:
@@ -130,8 +133,10 @@ paragraph into a stronger claim. In particular:
   1961–1990 reference period.
 - The daily high and anomaly for the current monitor day are forecast/model
   values; do not call them a weather-station observation.
-- For a published past date, the sidecar uses the available ERA5 reading and
+- For a published past point date, the sidecar uses the ERA5 anomaly map and
   says that the high “reached” the value instead of calling it a forecast.
+- Do not describe a global or regional date as historical ERA5 unless the
+  requested daily averages feed publishes the required anomaly fields.
 - A point result represents the requested place's nearest 0.25-degree grid
   cell, not an entire city or administrative area. The paragraph may simply
   say “the high in [place]”; keep the resolved coordinates in the verification

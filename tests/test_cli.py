@@ -11,10 +11,13 @@ import pytest
 
 from reuters_climate_paragraph.cli import (
     CDN_ROOT,
+    ERA5_MAP_ROOT,
+    HRES_MAP_ROOT,
     SITE_ROOT,
     ClimateMonitorClient,
     ClimateMonitorError,
     Observation,
+    anomaly_map_url,
     choose_feature,
     format_observation,
     geocode_place,
@@ -42,6 +45,16 @@ def feed_row(day: str, **extra: Any) -> dict[str, Any]:
         "t2m_max_delta": 2.0,
         **extra,
     }
+
+
+def test_anomaly_map_url_selects_published_source_by_date() -> None:
+    """Past point readings use ERA5 while current readings use HRES."""
+    assert anomaly_map_url(
+        "2026-09-21", today=date(2026, 9, 22)
+    ) == f"{ERA5_MAP_ROOT}/2026-09-21/t2m_max_delta.pmtiles"
+    assert anomaly_map_url(
+        "2026-09-22", today=date(2026, 9, 22)
+    ) == f"{HRES_MAP_ROOT}/2026-09-22/t2m_max_delta_data.pmtiles"
 
 
 def test_global_generation_uses_exact_date_and_published_delta() -> None:
@@ -295,6 +308,26 @@ def test_choose_feature_ignores_non_point_features() -> None:
         )
         is None
     )
+
+
+def test_choose_feature_prefers_published_grid_coordinates() -> None:
+    """ERA5 properties prevent MVT coordinate quantization from shifting cells."""
+    chosen = choose_feature(
+        [
+            {
+                "geometry": {"type": "Point", "coordinates": [0, 0]},
+                "properties": {"longitude": 2.25, "latitude": 48.75},
+            }
+        ],
+        129,
+        88,
+        48.8566,
+        2.3522,
+        8,
+    )
+
+    assert chosen is not None
+    assert chosen["coordinates"] == (2.25, 48.75)
 
 
 def test_grid_rounding_matches_frontend_boundary_behavior() -> None:

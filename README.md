@@ -19,8 +19,11 @@ UTC date exactly, and emits JSON containing:
 The output does not produce rankings, multi-location averages, trends, records,
 causes, climate attribution, or recomputed anomalies. Reuters Climate Monitor
 data is used as published; the paragraph is only a fixed presentation layer.
-For a published past date, the sidecar uses the available ERA5 reading and
-uses past tense rather than describing the result as a forecast.
+For a published past point date, the sidecar uses the published ERA5 anomaly
+map and uses past tense rather than describing the result as a forecast.
+Global and regional requests refuse dates where the daily averages feed does
+not publish the required anomaly fields rather than calculating or substituting
+values.
 
 ## Use
 

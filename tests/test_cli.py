@@ -69,6 +69,7 @@ def test_global_generation_uses_exact_date_and_published_delta() -> None:
 
     assert payload["daily_high_c"] == 20.04
     assert payload["anomaly_c"] == 1.234
+    assert payload["caution"].startswith("Verify the date")
     assert payload["paragraph"] == (
         "On Tuesday, the global average high is forecast to reach 20 degrees "
         "Celsius (68 degrees Fahrenheit), which is 1.2 C (2.2 F) above the "
@@ -251,6 +252,7 @@ def test_location_land_fallback_and_verification_url() -> None:
     assert payload["coordinates"] is not None
     assert "the high in Test Coast" in payload["paragraph"]
     assert "lat=0" in payload["site_url"]
+    assert payload["geocoder_url"].startswith("https://www.openstreetmap.org/")
     assert payload["source_urls"][0].endswith("/2026-09-22/t2m_max_delta_data.pmtiles")
 
 

@@ -19,6 +19,7 @@ PINNED_DATE = "2026-08-01"
 PARIS_LABEL = "Paris"
 PARIS_LAT = 48.8566
 PARIS_LNG = 2.3522
+SWISHER_LABEL = "Swisher, Iowa"
 
 
 def assert_finite_observation(observation: object) -> None:
@@ -95,3 +96,22 @@ def test_pinned_historical_location_has_stable_published_values() -> None:
     assert observation.source_urls == (
         f"{MAP_ROOT}/{PINNED_DATE}/t2m_max_delta_data.pmtiles",
     )
+
+
+@pytest.mark.integration
+def test_today_swisher_uses_the_default_geocoder() -> None:
+    """A named Iowa place is geocoded before its live grid lookup."""
+    day = datetime.now(UTC).date().isoformat()
+    observation = ClimateMonitorClient().location_observation(
+        SWISHER_LABEL,
+        None,
+        None,
+        day,
+    )
+
+    assert observation.date == day
+    assert_finite_observation(observation)
+    assert observation.coordinates == (-91.75, 41.75)
+    assert observation.geocoder_url is not None
+    assert observation.geocoder_url.startswith("https://www.openstreetmap.org/")
+    assert "place=Swisher%2C+Iowa" in observation.site_url

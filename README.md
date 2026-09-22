@@ -12,6 +12,8 @@ UTC date exactly, and emits JSON containing:
 - a fixed paragraph presenting those values;
 - Celsius-first temperature pairs with Fahrenheit in parentheses;
 - the Reuters page URL and direct CDN URL for verification; and
+- a publication caution and, for geocoded locations, a link to review the
+  resolved point; and
 - resolved grid coordinates for point lookups.
 
 The output does not produce rankings, multi-location averages, trends, records,

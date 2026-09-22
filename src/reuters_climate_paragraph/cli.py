@@ -26,9 +26,14 @@ MAP_ROOT = (
 )
 SITE_ROOT = "https://www.reuters.com/graphics/CLIMATE-AUTOMATED/MONITOR/akpeykqqapr/"
 NOMINATIM_ROOT = "https://nominatim.openstreetmap.org/search"
+OPENSTREETMAP_ROOT = "https://www.openstreetmap.org/"
 NOMINATIM_USER_AGENT = (
     "ReutersClimateParagraph/0.1 "
     "(https://github.com/palewire/reuters-climate-monitor-skill)"
+)
+CAUTION = (
+    "Verify the date, place, and figures against the linked Reuters Climate "
+    "Monitor before publication."
 )
 GRID_SIZE = 0.25
 ZOOM = 8
@@ -72,6 +77,7 @@ class Observation:
         site_url: Reuters Climate Monitor page URL for visual verification.
         coordinates: Resolved grid-cell coordinates for a point, if applicable.
         land_swapped: Whether an ocean click was resolved to nearby land.
+        geocoder_url: Review URL for coordinates resolved by a geocoder.
 
     Example:
         ``Observation(...).to_payload()["scope"] == "global"``
@@ -87,6 +93,7 @@ class Observation:
     site_url: str
     coordinates: tuple[float, float] | None = None
     land_swapped: bool = False
+    geocoder_url: str | None = None
 
     def to_payload(
         self, unit: str = "celsius", *, today: date | None = None
@@ -198,8 +205,10 @@ class ClimateMonitorClient:
         """
         if (lat is None) != (lng is None):
             raise ClimateMonitorError("Location requests need both --lat and --lng")
+        geocoder_url = None
         if lat is None or lng is None:
             lat, lng = self._geocoder(label)
+            geocoder_url = build_geocoder_point_url(lat, lng)
         validate_coordinates(lat, lng)
         url = f"{MAP_ROOT}/{day}/t2m_max_delta_data.pmtiles"
         reader = Reader(self._range_source_factory(url))
@@ -241,6 +250,7 @@ class ClimateMonitorClient:
             coordinates=resolved,
             site_url=site_url,
             land_swapped=feature["land_swapped"],
+            geocoder_url=geocoder_url,
         )
 
 
@@ -516,6 +526,7 @@ def observation_from_row(
     coordinates: tuple[float, float] | None = None,
     site_url: str | None = None,
     land_swapped: bool = False,
+    geocoder_url: str | None = None,
 ) -> Observation:
     """Build an observation after validating its three published temperatures.
 
@@ -528,6 +539,7 @@ def observation_from_row(
         coordinates: Resolved point coordinates, if any.
         site_url: Optional prebuilt page URL.
         land_swapped: Whether the point used nearby land.
+        geocoder_url: Review URL for coordinates resolved by a geocoder.
 
     Returns:
         A validated observation.
@@ -552,6 +564,7 @@ def observation_from_row(
         site_url=site_url or SITE_ROOT,
         coordinates=coordinates,
         land_swapped=land_swapped,
+        geocoder_url=geocoder_url,
     )
 
 
@@ -819,6 +832,7 @@ def format_observation(
         "normal_high": round(normal),
         "anomaly": round(anomaly, 1),
         "anomaly_direction": direction,
+        "caution": CAUTION,
         "paragraph": paragraph,
     }
 
@@ -838,6 +852,20 @@ def build_site_url(lat: float, lng: float, label: str) -> str:
         {"lat": round(lat, 4), "lng": round(lng, 4), "zoom": 6, "place": label}
     )
     return f"{SITE_ROOT}?{query}"
+
+
+def build_geocoder_point_url(lat: float, lng: float) -> str:
+    """Build an OpenStreetMap link for a geocoded point.
+
+    Args:
+        lat: Geocoded latitude.
+        lng: Geocoded longitude.
+
+    Returns:
+        A URL centered on the geocoded point.
+    """
+    query = urllib.parse.urlencode({"mlat": round(lat, 6), "mlon": round(lng, 6)})
+    return f"{OPENSTREETMAP_ROOT}?{query}#map=12/{lat:.6f}/{lng:.6f}"
 
 
 def run_generation(

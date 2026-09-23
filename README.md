@@ -254,6 +254,12 @@ this repository's [issue #5](https://github.com/palewire/reuters-climate-paragra
 [issue #6](https://github.com/palewire/reuters-climate-paragraph/issues/6), and
 [issue #7](https://github.com/palewire/reuters-climate-paragraph/issues/7).
 
+Release setup note: configure a PyPI trusted publisher for owner `palewire`,
+repository `reuters-climate-paragraph`, workflow
+`.github/workflows/continuous-deployment.yaml`, and its tag-triggered release
+job for package `reuters-climate-paragraph`. No PyPI or GitHub release exists
+yet; wait to release until this is configured.
+
 ## Install the Python package
 
 The Python sidecar is also distributed as a standard package on PyPI. After a

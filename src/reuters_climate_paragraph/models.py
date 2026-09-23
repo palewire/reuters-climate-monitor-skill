@@ -32,6 +32,7 @@ class Observation:
         coordinates: Resolved grid-cell coordinates for a point, if applicable.
         land_swapped: Whether an ocean click was resolved to nearby land.
         geocoder_url: Review URL for coordinates resolved by a geocoder.
+        source: Published source label for history rows, if present.
 
     Example:
         ``Observation(...).to_payload()["scope"] == "global"``
@@ -48,6 +49,7 @@ class Observation:
     coordinates: tuple[float, float] | None = None
     land_swapped: bool = False
     geocoder_url: str | None = None
+    source: str | None = None
 
     @classmethod
     def from_row(
@@ -62,6 +64,7 @@ class Observation:
         site_url: str | None = None,
         land_swapped: bool = False,
         geocoder_url: str | None = None,
+        source: str | None = None,
     ) -> Observation:
         """Build an observation from published row fields.
 
@@ -75,6 +78,7 @@ class Observation:
             site_url: Optional prebuilt page URL.
             land_swapped: Whether the point used nearby land.
             geocoder_url: Review URL for coordinates resolved by a geocoder.
+            source: Published source label, if the feed provides one.
 
         Returns:
             A validated observation.
@@ -100,6 +104,7 @@ class Observation:
             coordinates=coordinates,
             land_swapped=land_swapped,
             geocoder_url=geocoder_url,
+            source=source if isinstance(source, str) else None,
         )
 
     def to_payload(
@@ -122,7 +127,7 @@ class Observation:
 
             renderer = ParagraphRenderer()
         output = renderer.render(self, today=today)
-        return {
+        payload = {
             "scope": self.scope,
             "label": self.label,
             "date": self.date,
@@ -135,6 +140,9 @@ class Observation:
             "geocoder_url": self.geocoder_url,
             **output,
         }
+        if self.source is not None:
+            payload["source"] = self.source
+        return payload
 
 
 @dataclass(frozen=True)
@@ -163,6 +171,7 @@ def observation_from_row(
     site_url: str | None = None,
     land_swapped: bool = False,
     geocoder_url: str | None = None,
+    source: str | None = None,
 ) -> Observation:
     """Build an observation through the model factory.
 
@@ -176,6 +185,7 @@ def observation_from_row(
         site_url: Optional prebuilt page URL.
         land_swapped: Whether the point used nearby land.
         geocoder_url: Review URL for coordinates resolved by a geocoder.
+        source: Published source label, if the feed provides one.
 
     Returns:
         A validated observation.
@@ -190,4 +200,5 @@ def observation_from_row(
         site_url=site_url,
         land_swapped=land_swapped,
         geocoder_url=geocoder_url,
+        source=source,
     )

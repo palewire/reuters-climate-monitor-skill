@@ -60,6 +60,7 @@ class RegionRequestHandler:
             request.region_set,
             request.region,
             request.day,
+            today=request.today,
         )
 
 

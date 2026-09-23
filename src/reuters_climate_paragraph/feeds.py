@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import re
+import unicodedata
 import urllib.error
 import urllib.request
 from collections.abc import Callable
@@ -84,6 +86,38 @@ class MonitorFeedClient:
         matching = [row for row in rows if row.get(key) == region]
         return self.select_exact_row(matching, day, region), url
 
+    def region_history_row(
+        self,
+        region_set: str,
+        region: str,
+        day: str,
+    ) -> tuple[dict[str, Any], str]:
+        """Read one exact date from a manifest-published regional history feed.
+
+        Args:
+            region_set: Published region-set slug.
+            region: Exact display label or entity identifier.
+            day: UTC date in ``YYYY-MM-DD`` form.
+
+        Returns:
+            The matching published row and its feed URL.
+
+        Raises:
+            ClimateMonitorError: If the manifest, feed, date, or source label
+                is unusable.
+        """
+        GenerationRequest.validate_region_request(region_set, region)
+        template = self._region_history_template(region_set)
+        region_slug = self._entity_slug(region)
+        url = self._url_builder.region_history_feed_url(template, region_slug)
+        row = self.select_exact_row(self._json_fetcher(url), day, region)
+        source = row.get("source")
+        if not isinstance(source, str) or not source.strip():
+            raise ClimateMonitorError(
+                f"Reuters history row for {region} on {day} has no source label"
+            )
+        return row, url
+
     def region_labels(self, region_set: str) -> list[str]:
         """List labels currently published in one region-set feed.
 
@@ -124,6 +158,46 @@ class MonitorFeedClient:
             for region_set in sorted(REGION_SETS)
         }
 
+    def _region_history_template(self, region_set: str) -> str:
+        """Read a region-set history URL template from the public manifest.
+
+        Args:
+            region_set: Published region-set slug.
+
+        Returns:
+            The manifest's full-history URL template.
+
+        Raises:
+            ClimateMonitorError: If the manifest does not publish the
+                requested history template.
+        """
+        manifest_url = self._url_builder.region_manifest_url()
+        raw = self._json_fetcher(manifest_url)
+        if not isinstance(raw, dict):
+            raise ClimateMonitorError(
+                f"Reuters region manifest is not an object: {manifest_url}"
+            )
+        region_sets = raw.get("region_sets")
+        if not isinstance(region_sets, list):
+            raise ClimateMonitorError(
+                f"Reuters region manifest has no region sets: {manifest_url}"
+            )
+        for item in region_sets:
+            if not isinstance(item, dict) or item.get("slug") != region_set:
+                continue
+            urls = item.get("urls")
+            template = (
+                urls.get("full_history_by_region") if isinstance(urls, dict) else None
+            )
+            if isinstance(template, str) and template.strip():
+                return template
+            raise ClimateMonitorError(
+                f"Reuters region set {region_set!r} has no published full-history feed"
+            )
+        raise ClimateMonitorError(
+            f"Reuters manifest does not publish region set {region_set!r}"
+        )
+
     @staticmethod
     def _label_key(region_set: str) -> str:
         """Return the geography field used by a region-set feed.
@@ -139,6 +213,26 @@ class MonitorFeedClient:
         if region_set == "country":
             return "country"
         return "region"
+
+    @staticmethod
+    def _entity_slug(region: str) -> str:
+        """Convert a published entity label to its stable feed slug.
+
+        Args:
+            region: Published region label or identifier.
+
+        Returns:
+            A lowercase URL-safe entity slug.
+
+        Raises:
+            ClimateMonitorError: If the label produces no slug.
+        """
+        normalized = unicodedata.normalize("NFKD", region)
+        ascii_label = normalized.encode("ascii", "ignore").decode("ascii")
+        slug = re.sub(r"[^a-zA-Z0-9]+", "-", ascii_label).strip("-").lower()
+        if not slug:
+            raise ClimateMonitorError(f"Region {region!r} has no published entity slug")
+        return slug
 
     @staticmethod
     def fetch_json(url: str) -> object:

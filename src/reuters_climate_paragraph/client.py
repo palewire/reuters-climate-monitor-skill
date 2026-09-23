@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import UTC, date, datetime
 
 from .errors import ClimateMonitorError
 from .feeds import JsonFetcher, MonitorFeedClient
@@ -81,6 +82,8 @@ class ClimateMonitorClient:
         region_set: str,
         region: str,
         day: str,
+        *,
+        today: date | None = None,
     ) -> Observation:
         """Fetch a named region's reading for an exact UTC date.
 
@@ -88,17 +91,28 @@ class ClimateMonitorClient:
             region_set: Published region-set slug.
             region: Exact display label in that feed.
             day: UTC date in ``YYYY-MM-DD`` form.
+            today: Optional current date used to select the current or
+                full-history published feed.
 
         Returns:
             A validated regional observation.
         """
-        row, source_url = self._feed_client.region_row(region_set, region, day)
+        current_date = today or datetime.now(UTC).date()
+        if date.fromisoformat(day) < current_date:
+            row, source_url = self._feed_client.region_history_row(
+                region_set,
+                region,
+                day,
+            )
+        else:
+            row, source_url = self._feed_client.region_row(region_set, region, day)
         return Observation.from_row(
             "region",
             region,
             day,
             row,
             (source_url,),
+            source=row.get("source"),
         )
 
     def location_observation(

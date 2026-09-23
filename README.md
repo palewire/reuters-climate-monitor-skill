@@ -240,25 +240,16 @@ requested date from the published feeds.
 
 ## Regional history rollout
 
-The public region-set manifest is
-[`region-sets/manifest.json`](https://graphics.thomsonreuters.com/newsapps_climate-forecast/region-sets/manifest.json).
-Full-history regional data follows
-`region-sets/{region_set}/full-history-daily-averages/{entity_slug}.json`.
-The frontend's regional feed remains current-year-only; the full-history feeds
-are the source for earlier dates.
-
-Related work: backend [PR #1157](https://github.com/tr/newsapps_reuters-climate-monitor/pull/1157),
-[PR #1158](https://github.com/tr/newsapps_reuters-climate-monitor/pull/1158), and
-[issue #1154](https://github.com/tr/newsapps_reuters-climate-monitor/issues/1154);
-this repository's [issue #5](https://github.com/palewire/reuters-climate-paragraph/issues/5),
-[issue #6](https://github.com/palewire/reuters-climate-paragraph/issues/6), and
-[issue #7](https://github.com/palewire/reuters-climate-paragraph/issues/7).
-
-Release setup note: configure a PyPI trusted publisher for owner `palewire`,
-repository `reuters-climate-paragraph`, workflow
-`.github/workflows/continuous-deployment.yaml`, and its tag-triggered release
-job for package `reuters-climate-paragraph`. No PyPI or GitHub release exists
-yet; wait to release until this is configured.
+Regional history uses the public
+[`manifest`](https://graphics.thomsonreuters.com/newsapps_climate-forecast/region-sets/manifest.json);
+full-history data follows `region-sets/{region_set}/full-history-daily-averages/{entity_slug}.json`,
+while the frontend's regional feed remains current-year-only. Related: backend
+[#1157](https://github.com/tr/newsapps_reuters-climate-monitor/pull/1157),
+[#1158](https://github.com/tr/newsapps_reuters-climate-monitor/pull/1158),
+[#1154](https://github.com/tr/newsapps_reuters-climate-monitor/issues/1154); Skill
+[#5](https://github.com/palewire/reuters-climate-paragraph/issues/5),
+[#6](https://github.com/palewire/reuters-climate-paragraph/issues/6),
+[#7](https://github.com/palewire/reuters-climate-paragraph/issues/7).
 
 ## Install the Python package
 

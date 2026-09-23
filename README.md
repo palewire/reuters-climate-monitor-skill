@@ -72,6 +72,13 @@ env -u UV_ENV_FILE uv run reuters-climate-paragraph regions \
 These commands return JSON and read the current public feeds, so they are the
 best source when a user asks which regions are supported.
 
+Historical regional dates are read from the full-history entity feed advertised
+by the public region-set manifest. The sidecar keeps current and future
+regional requests on the latest daily-averages feed, and preserves a
+full-history row's published `source` label (`era5` or `hres`) in the JSON
+summary. It refuses missing or unsupported history instead of calculating
+replacement normals or anomalies.
+
 ```bash
 env -u UV_ENV_FILE uv run reuters-climate-paragraph generate \
   --scope global \

@@ -20,9 +20,13 @@ CONTINENT_LABELS = {
 REGION_SETS = {
     "continent",
     "western-europe",
+    "un-eastern-europe",
     "us-contiguous",
     "ncei-climate",
     "country",
+    "nuts1",
+    "nuts2",
+    "ipcc-ar6",
 }
 
 

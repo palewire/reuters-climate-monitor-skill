@@ -51,6 +51,43 @@ class ReutersUrlBuilder:
         """
         return f"{self.cdn_root}/daily-global-averages/latest-daily-averages.json"
 
+    def region_manifest_url(self) -> str:
+        """Build the public region-set manifest URL.
+
+        Returns:
+            The manifest URL used to discover published region feed templates.
+        """
+        return f"{self.cdn_root}/region-sets/manifest.json"
+
+    def region_history_feed_url(
+        self,
+        template: str,
+        region_slug: str,
+    ) -> str:
+        """Build a full-history feed URL from a manifest template.
+
+        Args:
+            template: Published relative or absolute URL template.
+            region_slug: Published entity slug.
+
+        Returns:
+            The expanded full-history feed URL.
+
+        Raises:
+            ClimateMonitorError: If the template has no region placeholder.
+        """
+        if "{region_slug}" not in template:
+            raise ClimateMonitorError(
+                "Reuters region manifest has no {region_slug} placeholder"
+            )
+        expanded = template.replace(
+            "{region_slug}",
+            urllib.parse.quote(region_slug, safe=""),
+        )
+        if expanded.startswith(("http://", "https://")):
+            return expanded
+        return f"{self.cdn_root.rstrip('/')}/{expanded.lstrip('/')}"
+
     def region_feed_url(self, region_set: str) -> str:
         """Build a published region-set daily-average feed URL.
 

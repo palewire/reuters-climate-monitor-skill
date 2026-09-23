@@ -8,6 +8,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Read historical regional entity feeds from the URL templates published in
+  the public region-set manifest, preserving each row's `source` label.
 - Publish the Python sidecar and CLI as a standard PyPI package alongside the
   portable Claude Desktop Skill archive.
 - Attach the portable `.skill` archive to the GitHub Release created for each

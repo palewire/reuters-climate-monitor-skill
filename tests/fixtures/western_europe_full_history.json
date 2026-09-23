@@ -1,0 +1,26 @@
+[
+  {
+    "date": "2026-09-16T00:00:00.000",
+    "name": "Western Europe",
+    "source": "era5",
+    "t2m_max_daily": 22.0,
+    "t2m_max_normal": 20.19,
+    "t2m_max_delta": 1.81
+  },
+  {
+    "date": "2026-09-17T00:00:00.000",
+    "name": "Western Europe",
+    "source": "hres",
+    "t2m_max_daily": 20.65,
+    "t2m_max_normal": 20.07,
+    "t2m_max_delta": 0.58
+  },
+  {
+    "date": "2026-09-22T00:00:00.000",
+    "name": "Western Europe",
+    "source": "hres",
+    "t2m_max_daily": 22.96,
+    "t2m_max_normal": 19.46,
+    "t2m_max_delta": 3.5
+  }
+]

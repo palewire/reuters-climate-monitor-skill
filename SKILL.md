@@ -43,9 +43,11 @@ env -u UV_ENV_FILE uv run ...
 2. Resolve the requested date as an explicit UTC date. Use the current UTC date
    when the user asks for today's reading. Current and future point requests
    use the published HRES map. Past point requests use the published ERA5
-   anomaly map and write the paragraph in the past tense. Global and regional
-   requests use the daily averages feed and refuse a date unless that feed
-   publishes all three required values; do not substitute the combined daily
+   anomaly map and write the paragraph in the past tense. Global and current
+   or future regional requests use the latest daily averages feed. Past
+   regional requests use the full-history entity feed advertised by the public
+   region-set manifest. In both cases, refuse a date unless the published row
+   includes all three required values; do not substitute the combined daily
    feed or calculate a missing anomaly.
 3. Use the fixed Celsius-first, Fahrenheit-in-parentheses presentation. Do not
    ask the user to choose a unit.
@@ -112,9 +114,13 @@ Use the exact display label and region-set pair:
 | ---------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `continent`      | Africa, Asia, Australia, Europe, North America, South America                                                    |
 | `western-europe` | Western Europe                                                                                                   |
+| `un-eastern-europe` | UN Eastern Europe (geographic Europe)                                                                         |
 | `us-contiguous`  | Contiguous United States                                                                                         |
 | `ncei-climate`   | Northeast, Upper Midwest, Ohio Valley, Southeast, South, Southwest, Northern Rockies and Plains, Northwest, West |
 | `country`        | A country published in the Western Europe country feed, such as France or Germany                                |
+| `nuts1`          | A Eurostat NUTS level 1 entity, such as `AL0`                                                                    |
+| `nuts2`          | A Eurostat NUTS level 2 entity, such as `AL01`                                                                   |
+| `ipcc-ar6`       | An IPCC AR6 reference region, such as `ARO`                                                                      |
 
 The sidecar rejects an unknown region instead of silently returning an
 unfiltered feed.
@@ -154,7 +160,8 @@ paragraph into a stronger claim. In particular:
 - For a published past point date, the sidecar uses the ERA5 anomaly map and
   says that the high “reached” the value instead of calling it a forecast.
 - Do not describe a global or regional date as historical ERA5 unless the
-  requested daily averages feed publishes the required anomaly fields.
+  requested published row has `source: "era5"`. Full-history regional rows
+  preserve their published `source` label in the JSON summary.
 - A point result represents the requested place's nearest 0.25-degree grid
   cell, not an entire city or administrative area. The paragraph may simply
   say “the high in [place]”; keep the resolved coordinates in the verification

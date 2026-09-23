@@ -5,6 +5,7 @@ from __future__ import annotations
 import gzip
 import json
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 import mapbox_vector_tile
@@ -32,6 +33,8 @@ from reuters_climate_paragraph.urls import (
     anomaly_map_url,
 )
 
+FIXTURE_DIR = Path(__file__).parent / "fixtures"
+
 
 def feed_row(day: str, **extra: Any) -> dict[str, Any]:
     """Create a valid synthetic daily-average row for tests.
@@ -50,6 +53,29 @@ def feed_row(day: str, **extra: Any) -> dict[str, Any]:
         "t2m_max_delta": 2.0,
         **extra,
     }
+
+
+def region_history_fixture_fetcher(url: str) -> object:
+    """Return deterministic manifest and Western Europe history fixtures.
+
+    Args:
+        url: Published URL requested by the feed client.
+
+    Returns:
+        The fixture object matching the requested URL.
+
+    Raises:
+        AssertionError: If the test requests an unexpected URL.
+    """
+    if url.endswith("/region-sets/manifest.json"):
+        return json.loads((FIXTURE_DIR / "region_manifest.json").read_text())
+    if url.endswith(
+        "/region-sets/western-europe/full-history-daily-averages/western-europe.json"
+    ):
+        return json.loads(
+            (FIXTURE_DIR / "western_europe_full_history.json").read_text()
+        )
+    raise AssertionError(f"Unexpected fixture URL: {url}")
 
 
 def test_anomaly_map_url_selects_published_source_by_date() -> None:
@@ -114,6 +140,7 @@ def test_region_generation_filters_the_requested_region() -> None:
         "2026-09-22",
         region_set="continent",
         region="Europe",
+        today=date(2026, 9, 22),
     )
 
     assert payload["anomaly"] == 3.5
@@ -121,6 +148,62 @@ def test_region_generation_filters_the_requested_region() -> None:
         "20.0 degrees Celsius (68.0 degrees Fahrenheit), which is 3.5 C (6.3 F) above"
         in payload["paragraph"]
     )
+
+
+def test_historical_region_reads_published_era5_fields_and_source() -> None:
+    """Historical regional copy uses the manifest feed's published fields."""
+    client = ClimateMonitorClient(json_fetcher=region_history_fixture_fetcher)
+
+    payload = run_generation(
+        client,
+        "region",
+        "2026-09-16",
+        region_set="western-europe",
+        region="Western Europe",
+        today=date(2026, 9, 23),
+    )
+
+    assert payload["daily_high_c"] == 22.0
+    assert payload["normal_high_c"] == 20.19
+    assert payload["anomaly_c"] == 1.81
+    assert payload["source"] == "era5"
+    assert "On September 16, 2026" in payload["paragraph"]
+    assert "reached 22.0 degrees Celsius" in payload["paragraph"]
+    assert "rank" not in payload
+    assert "trend" not in payload
+    assert "cause" not in payload
+
+
+def test_historical_region_preserves_hres_transition_source() -> None:
+    """The full-history feed preserves its HRES label after the ERA5 row."""
+    client = ClimateMonitorClient(json_fetcher=region_history_fixture_fetcher)
+
+    payload = run_generation(
+        client,
+        "region",
+        "2026-09-17",
+        region_set="western-europe",
+        region="Western Europe",
+        today=date(2026, 9, 23),
+    )
+
+    assert payload["source"] == "hres"
+    assert payload["daily_high_c"] == 20.65
+    assert payload["normal_high_c"] == 20.07
+    assert payload["anomaly_c"] == 0.58
+
+
+def test_history_requires_manifest_published_template() -> None:
+    """A region set without a manifest history template fails clearly."""
+
+    def manifest_without_history(url: str) -> object:
+        assert url.endswith("/region-sets/manifest.json")
+        return {"region_sets": [{"slug": "western-europe", "urls": {}}]}
+
+    client = MonitorFeedClient(json_fetcher=manifest_without_history)
+
+    with pytest.raises(ClimateMonitorError, match="no published full-history"):
+        client.region_history_row("western-europe", "Western Europe", "2026-09-16")
 
 
 def test_country_feed_uses_country_labels() -> None:

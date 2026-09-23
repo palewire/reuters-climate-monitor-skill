@@ -1,0 +1,59 @@
+{
+  "version": 4,
+  "region_sets": [
+    {
+      "slug": "continent",
+      "urls": {
+        "full_history_by_region": "region-sets/continent/full-history-daily-averages/{region_slug}.json"
+      }
+    },
+    {
+      "slug": "country",
+      "urls": {
+        "full_history_by_region": "region-sets/country/full-history-daily-averages/{region_slug}.json"
+      }
+    },
+    {
+      "slug": "western-europe",
+      "urls": {
+        "full_history_by_region": "region-sets/western-europe/full-history-daily-averages/{region_slug}.json"
+      }
+    },
+    {
+      "slug": "un-eastern-europe",
+      "urls": {
+        "full_history_by_region": "region-sets/un-eastern-europe/full-history-daily-averages/{region_slug}.json"
+      }
+    },
+    {
+      "slug": "us-contiguous",
+      "urls": {
+        "full_history_by_region": "region-sets/us-contiguous/full-history-daily-averages/{region_slug}.json"
+      }
+    },
+    {
+      "slug": "ncei-climate",
+      "urls": {
+        "full_history_by_region": "region-sets/ncei-climate/full-history-daily-averages/{region_slug}.json"
+      }
+    },
+    {
+      "slug": "nuts1",
+      "urls": {
+        "full_history_by_region": "region-sets/nuts1/full-history-daily-averages/{region_slug}.json"
+      }
+    },
+    {
+      "slug": "nuts2",
+      "urls": {
+        "full_history_by_region": "region-sets/nuts2/full-history-daily-averages/{region_slug}.json"
+      }
+    },
+    {
+      "slug": "ipcc-ar6",
+      "urls": {
+        "full_history_by_region": "region-sets/ipcc-ar6/full-history-daily-averages/{region_slug}.json"
+      }
+    }
+  ]
+}
